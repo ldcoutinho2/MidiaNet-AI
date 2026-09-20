@@ -57,7 +57,7 @@ export async function POST() {
 
   try {
     const response = await openai.responses.create({
-      model: "gpt-6-astra",
+      model: "gpt-5.6-luna",
       instructions: [
         "Você é o estrategista principal do MidiaNet AI.",
         "Sua função é transformar informações reais fornecidas pelo cliente em uma estratégia prática de conteúdo.",
