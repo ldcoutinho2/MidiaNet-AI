@@ -443,10 +443,18 @@ function Ideas({
   ideas: ContentIdea[];
   plan: PlanItem[];
 }) {
+  const [selected, setSelected] = useState<ContentIdea | null>(null);
+  const [format, setFormat] = useState("Reels");
+  const [message, setMessage] = useState("");
+  const [chat, setChat] = useState<{ role: string; text: string }[]>([]);
+  const [result, setResult] = useState<any | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [ownIdea, setOwnIdea] = useState("");
+
   const fallback = plan.map((x) => ({
     title: x.idea,
     format: x.format,
-    objective: x.objective,
+    objective: x.objective || "Conteúdo estratégico",
     angle: x.idea,
     hook: x.hook,
     whyItFits: "Parte do plano semanal personalizado."
@@ -454,14 +462,113 @@ function Ideas({
 
   const items = ideas.length ? ideas : fallback;
 
+  async function sendToAI(mode: "refine" | "generate", customIdea?: ContentIdea) {
+    const idea = customIdea || selected;
+    if (!idea) return;
+
+    setBusy(true);
+
+    const userMessage =
+      customIdea
+        ? "Minha ideia é: " + customIdea.title
+        : message.trim() || "Melhore esta ideia mantendo a essência e deixe pronta para execução.";
+
+    const nextChat = [...chat, { role: "user", text: userMessage }];
+    setChat(nextChat);
+    setMessage("");
+
+    try {
+      const r = await fetch("/api/ai/refine-content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode,
+          idea,
+          format,
+          message: userMessage,
+          history: nextChat
+        })
+      });
+
+      const x = await r.json();
+
+      if (!r.ok) {
+        setChat((old) => [...old, { role: "assistant", text: x.error || "Não consegui ajustar agora." }]);
+        return;
+      }
+
+      setResult(x.result);
+      setSelected({
+        title: x.result.title,
+        format: x.result.format,
+        objective: x.result.objective,
+        angle: x.result.angle,
+        hook: x.result.hook,
+        whyItFits: x.result.whyItFits
+      });
+      setChat((old) => [...old, { role: "assistant", text: x.result.assistantReply }]);
+    } catch {
+      setChat((old) => [...old, { role: "assistant", text: "Não consegui conectar à IA agora." }]);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function startIdea(idea: ContentIdea) {
+    setSelected(idea);
+    setResult(null);
+    setChat([]);
+    setFormat(idea.format || "Reels");
+  }
+
+  function startOwnIdea() {
+    const text = ownIdea.trim();
+    if (!text) return;
+
+    const idea: ContentIdea = {
+      title: text,
+      format,
+      objective: "Definir com a IA",
+      angle: text,
+      hook: text,
+      whyItFits: "Ideia criada pelo próprio cliente."
+    };
+
+    setOwnIdea("");
+    startIdea(idea);
+    void sendToAI("refine", idea);
+  }
+
   return (
     <div style={{ marginTop: 20 }}>
       <div className="feature">
-        <h3>💡 Banco de ideias acionáveis</h3>
+        <h3>💡 Banco de ideias</h3>
         <p className="muted">
-          Não são apenas temas: cada ideia já vem com ângulo, objetivo e
-          gancho para você saber exatamente o que publicar.
+          Você não precisa aceitar a primeira sugestão. Escolha uma ideia,
+          converse com a IA, peça mudanças ou comece com uma ideia sua.
         </p>
+
+        <div
+          className="card"
+          style={{ marginTop: 14, border: "1px solid rgba(255,255,255,.12)" }}
+        >
+          <strong>💭 Você também pode trazer a ideia</strong>
+          <textarea
+            value={ownIdea}
+            onChange={(e) => setOwnIdea(e.target.value)}
+            placeholder="Ex.: quero fazer um vídeo mostrando como escolher um bom serviço de seguidores..."
+            rows={3}
+            style={{ width: "100%", marginTop: 10 }}
+          />
+          <button
+            className="btn primary"
+            onClick={startOwnIdea}
+            disabled={!ownIdea.trim() || busy}
+            style={{ marginTop: 10 }}
+          >
+            Desenvolver minha ideia →
+          </button>
+        </div>
 
         {items.length ? (
           items.map((x, i) => (
@@ -485,14 +592,136 @@ function Ideas({
               <p className="small muted" style={{ marginTop: 6 }}>
                 Por que faz sentido: {x.whyItFits}
               </p>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+                <button className="btn primary" onClick={() => startIdea(x)}>
+                  Usar esta ideia
+                </button>
+                <button className="btn secondary" onClick={() => { startIdea(x); setMessage("Quero melhorar esta ideia, mas manter a essência."); }}>
+                  Melhorar
+                </button>
+              </div>
             </div>
           ))
         ) : (
-          <p style={{ marginTop: 12 }}>
-            Nenhuma ideia foi gerada ainda.
-          </p>
+          <p style={{ marginTop: 12 }}>Nenhuma ideia foi gerada ainda.</p>
         )}
       </div>
+
+      {selected && (
+        <div className="feature" style={{ marginTop: 20 }}>
+          <div className="badge">🤝 Copiloto de conteúdo</div>
+          <h3 style={{ marginTop: 12 }}>{selected.title}</h3>
+          <p className="muted">
+            A ideia é sua. A IA trabalha com você até ficar do jeito que você quer.
+          </p>
+
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
+            {["Reels", "Carrossel", "Stories", "Post"].map((x) => (
+              <button
+                key={x}
+                className={format === x ? "btn primary" : "btn secondary"}
+                onClick={() => setFormat(x)}
+              >
+                {x}
+              </button>
+            ))}
+          </div>
+
+          {chat.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              {chat.map((m, i) => (
+                <div
+                  key={i}
+                  className="card"
+                  style={{
+                    marginTop: 8,
+                    background: m.role === "user" ? "rgba(255,255,255,.06)" : "rgba(255,0,140,.06)"
+                  }}
+                >
+                  <strong>{m.role === "user" ? "Você" : "MidiaNet AI"}</strong>
+                  <p style={{ marginTop: 6, whiteSpace: "pre-line" }}>{m.text}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Diga o que você quer mudar: mais curto, mais profissional, sem aparecer, CTA para WhatsApp, mais polêmico..."
+            rows={4}
+            style={{ width: "100%", marginTop: 14 }}
+          />
+
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+            <button
+              className="btn secondary"
+              disabled={busy || !message.trim()}
+              onClick={() => void sendToAI("refine")}
+            >
+              {busy ? "Ajustando..." : "💬 Melhorar com a IA"}
+            </button>
+
+            <button
+              className="btn primary"
+              disabled={busy}
+              onClick={() => void sendToAI("generate")}
+            >
+              {busy ? "Criando..." : "✅ Aprovar ideia e criar conteúdo"}
+            </button>
+          </div>
+
+          {result && (
+            <div className="card" style={{ marginTop: 18 }}>
+              <div className="badge">Conteúdo criado</div>
+              <h3 style={{ marginTop: 12 }}>{result.title}</h3>
+              <p style={{ marginTop: 8 }}>
+                <strong>🎯 Objetivo:</strong> {result.objective}
+              </p>
+              <p style={{ marginTop: 8 }}>
+                <strong>🪝 Gancho:</strong> {result.hook}
+              </p>
+
+              <div style={{ marginTop: 14 }}>
+                <strong>📝 Roteiro</strong>
+                <p style={{ marginTop: 6, whiteSpace: "pre-line" }}>{result.script}</p>
+              </div>
+
+              <div style={{ marginTop: 14 }}>
+                <strong>✍️ Legenda</strong>
+                <p style={{ marginTop: 6, whiteSpace: "pre-line" }}>{result.caption}</p>
+              </div>
+
+              <div style={{ marginTop: 14 }}>
+                <strong>🎥 Direção visual</strong>
+                <p style={{ marginTop: 6 }}>{result.visualDirection}</p>
+              </div>
+
+              <div style={{ marginTop: 14 }}>
+                <strong>📣 CTA</strong>
+                <p style={{ marginTop: 6 }}>{result.cta}</p>
+              </div>
+
+              {Array.isArray(result.carouselSlides) && result.carouselSlides.length > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <strong>🎨 Estrutura do carrossel</strong>
+                  {result.carouselSlides.map((slide: any) => (
+                    <div className="card" key={slide.slide} style={{ marginTop: 8 }}>
+                      <strong>Slide {slide.slide}: {slide.headline}</strong>
+                      <p style={{ marginTop: 5 }}>{slide.body}</p>
+                      <p className="small muted" style={{ marginTop: 5 }}>Visual: {slide.visual}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <p className="small muted" style={{ marginTop: 14 }}>
+                Você pode continuar conversando e pedir novas alterações. As preferências dessa conversa são registradas no seu histórico de conteúdo para orientar futuras gerações.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
