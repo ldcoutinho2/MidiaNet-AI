@@ -14,7 +14,7 @@ const steps = [
   "Revisão",
 ];
 
-const initial = {
+type SetupForm = {\n  instagramProfileUrl:string; profileDescription:string; businessType:string; niche:string; offer:string; desiredOutcome:string;\n  audience:string; audienceAge:string; audienceGender:string; audienceLocation:string; audienceInterests:string; audiencePainPoints:string;\n  objective:string; secondaryObjectives:string[]; conversionGoal:string; monetization:string; desiredPositioning:string; brandPersonality:string;\n  contentPreferences:string[]; contentStyle:string; appearsOnCamera:boolean; availableMinutesPerDay:number; availableDaysPerWeek:number; postingFrequency:string;\n  contentAvoid:string; referenceProfiles:string; competitors:string; differentiators:string; currentChallenges:string; salesFunnel:string; ninetyDayGoal:string; successDefinition:string; constraints:string; location:string;\n};\n\nconst initial: SetupForm = {
   instagramProfileUrl: "",
   profileDescription: "",
   businessType: "",
@@ -63,7 +63,7 @@ function Field({ label, value, onChange, placeholder, textarea=false }: any) {
 export default function SetupPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [form, setForm] = useState(initial);
+  const [form, setForm] = useState<SetupForm>(initial);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -73,23 +73,49 @@ export default function SetupPage() {
       if (!r.ok) { router.replace("/login"); return null; }
       return r.json();
     }).then(data => {
-      const p = data?.user?.strategicProfile as Record<string, any> | null | undefined;
+      const p = data?.user?.strategicProfile as Partial<SetupForm> & { onboardingCompletedAt?: string | null } | null | undefined;
       if (!p) return;
       if (p.onboardingCompletedAt) {
         router.replace("/dashboard");
         return;
       }
-      setForm(current => {
-        const next = { ...current } as Record<string, any>;
-        for (const key of Object.keys(initial)) {
-          if (p[key] !== undefined && p[key] !== null) {
-            next[key] = p[key];
-          }
-        }
-        next.secondaryObjectives = Array.isArray(p.secondaryObjectives) ? p.secondaryObjectives : [];
-        next.contentPreferences = Array.isArray(p.contentPreferences) ? p.contentPreferences : [];
-        return next as typeof current;
-      });
+      setForm(current => ({
+        ...current,
+        instagramProfileUrl: p.instagramProfileUrl ?? current.instagramProfileUrl,
+        profileDescription: p.profileDescription ?? current.profileDescription,
+        businessType: p.businessType ?? current.businessType,
+        niche: p.niche ?? current.niche,
+        offer: p.offer ?? current.offer,
+        desiredOutcome: p.desiredOutcome ?? current.desiredOutcome,
+        audience: p.audience ?? current.audience,
+        audienceAge: p.audienceAge ?? current.audienceAge,
+        audienceGender: p.audienceGender ?? current.audienceGender,
+        audienceLocation: p.audienceLocation ?? current.audienceLocation,
+        audienceInterests: p.audienceInterests ?? current.audienceInterests,
+        audiencePainPoints: p.audiencePainPoints ?? current.audiencePainPoints,
+        objective: p.objective ?? current.objective,
+        secondaryObjectives: Array.isArray(p.secondaryObjectives) ? p.secondaryObjectives : current.secondaryObjectives,
+        conversionGoal: p.conversionGoal ?? current.conversionGoal,
+        monetization: p.monetization ?? current.monetization,
+        desiredPositioning: p.desiredPositioning ?? current.desiredPositioning,
+        brandPersonality: p.brandPersonality ?? current.brandPersonality,
+        contentPreferences: Array.isArray(p.contentPreferences) ? p.contentPreferences : current.contentPreferences,
+        contentStyle: p.contentStyle ?? current.contentStyle,
+        appearsOnCamera: typeof p.appearsOnCamera === "boolean" ? p.appearsOnCamera : current.appearsOnCamera,
+        availableMinutesPerDay: typeof p.availableMinutesPerDay === "number" ? p.availableMinutesPerDay : current.availableMinutesPerDay,
+        availableDaysPerWeek: typeof p.availableDaysPerWeek === "number" ? p.availableDaysPerWeek : current.availableDaysPerWeek,
+        postingFrequency: p.postingFrequency ?? current.postingFrequency,
+        contentAvoid: p.contentAvoid ?? current.contentAvoid,
+        referenceProfiles: p.referenceProfiles ?? current.referenceProfiles,
+        competitors: p.competitors ?? current.competitors,
+        differentiators: p.differentiators ?? current.differentiators,
+        currentChallenges: p.currentChallenges ?? current.currentChallenges,
+        salesFunnel: p.salesFunnel ?? current.salesFunnel,
+        ninetyDayGoal: p.ninetyDayGoal ?? current.ninetyDayGoal,
+        successDefinition: p.successDefinition ?? current.successDefinition,
+        constraints: p.constraints ?? current.constraints,
+        location: p.location ?? current.location,
+      }));
     }).finally(()=>setLoading(false));
   }, [router]);
 
