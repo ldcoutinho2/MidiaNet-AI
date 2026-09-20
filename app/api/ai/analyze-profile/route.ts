@@ -82,7 +82,10 @@ export async function POST() {
         "Não invente dados sobre Instagram, métricas, público ou negócio que não foram fornecidos.",
         "Quando algo não puder ser concluído com segurança, faça uma inferência claramente plausível e mantenha-a útil e conservadora.",
         "Priorize o objetivo comercial do cliente, não métricas de vaidade.",
-        "Crie uma primeira semana de conteúdo coerente com o posicionamento, público e objetivo.",
+        "Crie uma primeira semana de conteúdo coerente com o posicionamento, público, objetivo, formatos escolhidos e tempo disponível pelo cliente.",
+        "Respeite os formatos que o cliente escolheu para investir tempo; não force formatos que ele marcou como indesejados.",
+        "Compare o posicionamento percebido atualmente, quando houver evidências públicas, com o posicionamento desejado pelo cliente e transforme a diferença em oportunidades práticas.",
+        "Considere monetização, funil, diferenciais, concorrentes, restrições, rotina e definição de sucesso ao montar o plano.",
         instagramReference
           ? "O cliente forneceu uma referência de perfil do Instagram. Use a busca na web para procurar informações públicas sobre esse perfil. Se a página não estiver acessível ou não houver informação confiável, diga isso e NÃO invente dados."
           : "Não foi fornecido um perfil do Instagram para pesquisa.",
