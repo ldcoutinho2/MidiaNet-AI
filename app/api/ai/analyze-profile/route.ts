@@ -41,6 +41,8 @@ const schema = {
     },
     weeklyPlan: {
       type: "array",
+      minItems: 7,
+      maxItems: 7,
       items: {
         type: "object",
         additionalProperties: false,
@@ -49,6 +51,8 @@ const schema = {
           mission: { type: "string" },
           slots: {
             type: "array",
+            minItems: 3,
+            maxItems: 3,
             items: {
               type: "object",
               additionalProperties: false,
@@ -214,6 +218,18 @@ export async function POST() {
     }
 
     const aiProfile = JSON.parse(response.output_text);
+    aiProfile.weeklyContentCount = Array.isArray(aiProfile.weeklyPlan)
+      ? aiProfile.weeklyPlan.reduce(
+          (total: number, day: { slots?: unknown[] }) =>
+            total + (Array.isArray(day.slots) ? day.slots.length : 0),
+          0
+        )
+      : 0;
+    aiProfile.dailyContentCount = Array.isArray(aiProfile.weeklyPlan)
+      ? aiProfile.weeklyPlan
+          .map((day: { slots?: unknown[] }) => Array.isArray(day.slots) ? day.slots.length : 0)
+          .join(" / ") + " conteúdos por dia"
+      : "—";
     const updated = await db.strategicProfile.update({
       where: { userId: user.id },
       data: { aiProfile, aiAnalyzedAt: new Date() }
