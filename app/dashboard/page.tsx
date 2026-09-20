@@ -55,8 +55,13 @@ export default function Dashboard() {
       })
       .then(result => {
         if (result) {
+          const strategicProfile = result.user.strategicProfile;
+          if (!strategicProfile?.onboardingCompletedAt) {
+            router.replace("/setup");
+            return;
+          }
           setData(result);
-          setInstagramReference(result.user.strategicProfile?.instagramProfileUrl || "");
+          setInstagramReference(strategicProfile.instagramProfileUrl || "");
         }
       })
       .finally(() => setLoading(false));
