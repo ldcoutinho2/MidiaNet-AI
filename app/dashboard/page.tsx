@@ -148,7 +148,8 @@ export default function Dashboard() {
   if (!data) return null;
 
   const p = data.user.strategicProfile!;
-  const ai = p.aiProfile;
+  const rawAI = p.aiProfile;
+  const ai = isCurrentStrategy(rawAI) ? rawAI : null;
 
   return (
     <main className="page">
@@ -177,7 +178,11 @@ export default function Dashboard() {
         {error && <p className="small" style={{ color: "#fda4af", marginTop: 14 }}>{error}</p>}
 
         {!ai ? (
-          <SetupStrategy analyzing={analyzing} analyze={analyze} />
+          <SetupStrategy
+            analyzing={analyzing}
+            analyze={analyze}
+            hasOldStrategy={Boolean(rawAI)}
+          />
         ) : (
           <>
             {tab === "home" && <Home ai={ai} onWeek={() => setTab("week")} />}
@@ -192,16 +197,46 @@ export default function Dashboard() {
   );
 }
 
-function SetupStrategy({ analyzing, analyze }: { analyzing: boolean; analyze: () => void }) {
+function isCurrentStrategy(value: any): value is AIProfile {
+  return Boolean(
+    value &&
+    typeof value === "object" &&
+    typeof value.objective === "string" &&
+    typeof value.currentStage === "string" &&
+    typeof value.mainProblem === "string" &&
+    typeof value.weeklyMission === "string" &&
+    Array.isArray(value.thirtyDayPlan) &&
+    Array.isArray(value.weeklyPlan) &&
+    value.weeklyPlan.every(
+      (day: any) =>
+        day &&
+        typeof day.day === "string" &&
+        typeof day.mission === "string" &&
+        Array.isArray(day.slots)
+    )
+  );
+}
+
+function SetupStrategy({
+  analyzing,
+  analyze,
+  hasOldStrategy
+}: {
+  analyzing: boolean;
+  analyze: () => void;
+  hasOldStrategy: boolean;
+}) {
   return (
     <div className="feature" style={{ marginTop: 24 }}>
-      <div className="badge">1º passo</div>
-      <h2 style={{ marginTop: 12 }}>Vamos transformar seu perfil em um plano.</h2>
+      <div className="badge">{hasOldStrategy ? "Atualização" : "1º passo"}</div>
+      <h2 style={{ marginTop: 12 }}>
+        {hasOldStrategy ? "Sua estratégia ganhou uma nova estrutura." : "Vamos transformar seu perfil em um plano."}
+      </h2>
       <p className="muted" style={{ marginTop: 8, maxWidth: 760 }}>
-        A IA vai analisar suas respostas e montar seu objetivo, diagnóstico, estratégia de 30 dias, programação da semana e o que você deve executar agora.
+        A IA vai {hasOldStrategy ? "reorganizar seu diagnóstico atual" : "analisar suas respostas"} e montar seu objetivo, diagnóstico, estratégia de 30 dias, programação da semana e o que você deve executar agora.
       </p>
       <button className="btn primary" onClick={analyze} disabled={analyzing} style={{ marginTop: 18 }}>
-        {analyzing ? "Analisando seu perfil..." : "Montar minha estratégia →"}
+        {analyzing ? "Analisando seu perfil..." : hasOldStrategy ? "Atualizar minha estratégia →" : "Montar minha estratégia →"}
       </button>
     </div>
   );
