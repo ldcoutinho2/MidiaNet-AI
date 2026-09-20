@@ -99,19 +99,52 @@ export async function POST() {
               type: "input_text",
               text: JSON.stringify({
                 nome: user.name,
-                perfilInstagramParaPesquisar: profile.instagramProfileUrl || null,
-                descricaoDoPerfil: profile.profileDescription,
-                objetivoDeclarado: profile.desiredOutcome,
-                outrosDados: {
-                  objective: profile.objective,
-                  conversionGoal: profile.conversionGoal,
-                  audience: profile.audience,
-                  location: profile.location,
-                  appearsOnCamera: profile.appearsOnCamera,
-                  availableMinutesPerDay: profile.availableMinutesPerDay,
-                  contentStyle: profile.contentStyle,
-                  ninetyDayGoal: profile.ninetyDayGoal
-                }
+                instagram: profile.instagramProfileUrl,
+                negocio: {
+                  descricao: profile.profileDescription,
+                  tipo: profile.businessType,
+                  nicho: profile.niche,
+                  oferta: profile.offer,
+                  localizacao: profile.location
+                },
+                publico: {
+                  descricao: profile.audience,
+                  idade: profile.audienceAge,
+                  genero: profile.audienceGender,
+                  localizacao: profile.audienceLocation,
+                  interesses: profile.audienceInterests,
+                  doresEDesejos: profile.audiencePainPoints
+                },
+                objetivos: {
+                  principal: profile.objective,
+                  secundarios: profile.secondaryObjectives,
+                  objetivoDeclarado: profile.desiredOutcome,
+                  conversao: profile.conversionGoal,
+                  meta90Dias: profile.ninetyDayGoal,
+                  sucesso: profile.successDefinition
+                },
+                posicionamento: {
+                  desejado: profile.desiredPositioning,
+                  personalidade: profile.brandPersonality,
+                  estilo: profile.contentStyle,
+                  referencias: profile.referenceProfiles,
+                  concorrentes: profile.competitors,
+                  diferenciais: profile.differentiators,
+                  restricoes: profile.constraints
+                },
+                conteudo: {
+                  formatos: profile.contentPreferences,
+                  apareceNosVideos: profile.appearsOnCamera,
+                  minutosPorDia: profile.availableMinutesPerDay,
+                  diasPorSemana: profile.availableDaysPerWeek,
+                  frequencia: profile.postingFrequency,
+                  evitar: profile.contentAvoid
+                },
+                monetizacao: {
+                  modelo: profile.monetization,
+                  funilAtual: profile.salesFunnel
+                },
+                desafiosAtuais: profile.currentChallenges
               })
             }
           ]
