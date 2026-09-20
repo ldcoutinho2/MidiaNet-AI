@@ -42,6 +42,19 @@ const schema = {
   ],
 } as const;
 
+function normalizeInstagramReference(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (trimmed.startsWith("@")) return trimmed.slice(1);
+  try {
+    const url = new URL(trimmed);
+    if (url.hostname.includes("instagram.com")) {
+      return url.pathname.split("/").filter(Boolean)[0] || trimmed;
+    }
+  } catch {}
+  return trimmed;
+}
+
 export async function POST() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
@@ -56,8 +69,13 @@ export async function POST() {
   }
 
   try {
+    const instagramReference = profile.instagramProfileUrl
+      ? normalizeInstagramReference(profile.instagramProfileUrl)
+      : "";
+
     const response = await openai.responses.create({
       model: "gpt-5.6-luna",
+      tools: instagramReference ? [{ type: "web_search" }] : undefined,
       instructions: [
         "Você é o estrategista principal do MidiaNet AI.",
         "Sua função é transformar informações reais fornecidas pelo cliente em uma estratégia prática de conteúdo.",
@@ -65,6 +83,9 @@ export async function POST() {
         "Quando algo não puder ser concluído com segurança, faça uma inferência claramente plausível e mantenha-a útil e conservadora.",
         "Priorize o objetivo comercial do cliente, não métricas de vaidade.",
         "Crie uma primeira semana de conteúdo coerente com o posicionamento, público e objetivo.",
+        instagramReference
+          ? "O cliente forneceu uma referência de perfil do Instagram. Use a busca na web para procurar informações públicas sobre esse perfil. Se a página não estiver acessível ou não houver informação confiável, diga isso e NÃO invente dados."
+          : "Não foi fornecido um perfil do Instagram para pesquisa.",
         "Responda exclusivamente no formato estruturado solicitado."
       ].join("\n"),
       input: [
@@ -75,6 +96,7 @@ export async function POST() {
               type: "input_text",
               text: JSON.stringify({
                 nome: user.name,
+                perfilInstagramParaPesquisar: profile.instagramProfileUrl || null,
                 descricaoDoPerfil: profile.profileDescription,
                 objetivoDeclarado: profile.desiredOutcome,
                 outrosDados: {
