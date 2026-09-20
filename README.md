@@ -27,3 +27,7 @@ Conectar Instagram → analisar perfil → entender objetivo do cliente → perg
 - O objetivo declarado pelo cliente orienta a estratégia.
 - Arquitetura modular para evitar regressões.
 - TikTok fica para uma fase posterior.
+
+## Deployment
+
+- Commit de teste para validar uma nova implantação na Vercel.
