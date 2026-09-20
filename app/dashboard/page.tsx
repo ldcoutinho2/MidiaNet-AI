@@ -209,12 +209,14 @@ function isCurrentStrategy(value: any): value is AIProfile {
     typeof value.weeklyMission === "string" &&
     Array.isArray(value.thirtyDayPlan) &&
     Array.isArray(value.weeklyPlan) &&
+    value.weeklyPlan.length === 7 &&
     value.weeklyPlan.every(
       (day: any) =>
         day &&
         typeof day.day === "string" &&
         typeof day.mission === "string" &&
-        Array.isArray(day.slots)
+        Array.isArray(day.slots) &&
+        day.slots.length === 3
     )
   );
 }
@@ -315,45 +317,68 @@ function Strategy({ ai }: { ai: AIProfile }) {
 }
 
 function Week({ ai }: { ai: AIProfile }) {
-  const [open, setOpen] = useState(0);
+  const [open, setOpen] = useState<number | null>(null);
   return (
     <div style={{ marginTop: 22 }}>
       <div className="feature">
         <div className="badge">📅 Execução</div>
         <h2 style={{ marginTop: 12 }}>Minha semana</h2>
         <p className="muted" style={{ marginTop: 6 }}>{ai.weeklyMission}</p>
+
         <div className="grid3" style={{ marginTop: 14 }}>
-          <Info title="📦 Conteúdos na semana" value={String(ai.weeklyContentCount)} />
-          <Info title="📆 Por dia" value={ai.dailyContentCount} />
-          <Info title="🧩 Estrutura" value="Cada dia mostra horário + formato + conteúdo" />
+          <Info title="📦 Conteúdos na semana" value={String(ai.weeklyContentCount || 21)} />
+          <Info title="📆 Conteúdos por dia" value={ai.dailyContentCount || "3 conteúdos por dia"} />
+          <Info title="🧩 Estrutura" value="Foto/Post + Reel/Vídeo + Carrossel" />
         </div>
 
-        {ai.weeklyPlan.map((day, i) => (
-          <div className="card" key={i} style={{ marginTop: 12 }}>
-            <button
-              onClick={() => setOpen(open === i ? -1 : i)}
-              style={{ width: "100%", background: "none", border: 0, color: "inherit", textAlign: "left", cursor: "pointer", padding: 0 }}
-            >
+        <div style={{ marginTop: 18 }}>
+          {ai.weeklyPlan.map((day, i) => (
+            <div className="card" key={i} style={{ marginTop: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                <strong style={{ fontSize: 18 }}>{day.day}</strong>
-                <span className="badge">{day.slots.length} conteúdo{day.slots.length === 1 ? "" : "s"} neste dia</span>
+                <div>
+                  <strong style={{ fontSize: 19 }}>{day.day}</strong>
+                  <p className="small muted" style={{ marginTop: 5 }}>{day.mission}</p>
+                </div>
+                <span className="badge">{day.slots.length} conteúdos</span>
               </div>
-              <p className="small muted" style={{ marginTop: 6 }}>{day.mission}</p>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 9 }}>
+
+              <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
                 {day.slots.map((slot, j) => (
-                  <span key={j} className="small" style={{ padding: "5px 8px", borderRadius: 8, background: "rgba(255,255,255,.05)" }}>
-                    {slot.time} · {slot.format}
-                  </span>
+                  <button
+                    key={j}
+                    onClick={() => setOpen(open === i * 10 + j ? null : i * 10 + j)}
+                    style={{
+                      width: "100%",
+                      background: "rgba(255,255,255,.035)",
+                      border: "1px solid rgba(255,255,255,.07)",
+                      color: "inherit",
+                      textAlign: "left",
+                      borderRadius: 10,
+                      padding: 12,
+                      cursor: "pointer"
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                      <strong>#{j + 1} · {slot.time} · {slot.format}</strong>
+                      <span className="small muted">{slot.role}</span>
+                    </div>
+                    <div style={{ marginTop: 6 }}>{slot.title}</div>
+                    <div className="small muted" style={{ marginTop: 5 }}>{slot.objective}</div>
+                    {open === i * 10 + j && (
+                      <div style={{ marginTop: 12, borderTop: "1px solid rgba(255,255,255,.08)", paddingTop: 10 }}>
+                        <p><strong>🪝 Gancho:</strong> {slot.hook}</p>
+                        <p style={{ marginTop: 8 }}><strong>📌 Tema:</strong> {slot.topic}</p>
+                        <p style={{ marginTop: 8 }}><strong>🎬 Roteiro:</strong> {slot.script}</p>
+                        <p style={{ marginTop: 8 }}><strong>✍️ Legenda:</strong> {slot.caption}</p>
+                        <p style={{ marginTop: 8 }}><strong>📣 CTA:</strong> {slot.cta}</p>
+                      </div>
+                    )}
+                  </button>
                 ))}
               </div>
-            </button>
-            {open === i && (
-              <div style={{ marginTop: 10 }}>
-                {day.slots.map((slot, j) => <ContentCard key={j} slot={slot} />)}
-              </div>
-            )}
-          </div>
-        ))}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
