@@ -73,7 +73,7 @@ export default function SetupPage() {
       if (!r.ok) { router.replace("/login"); return null; }
       return r.json();
     }).then(data => {
-      const p = data?.user?.strategicProfile;
+      const p = data?.user?.strategicProfile as Record<string, any> | null | undefined;
       if (!p) return;
       if (p.onboardingCompletedAt) {
         router.replace("/dashboard");
