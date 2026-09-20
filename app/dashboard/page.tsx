@@ -13,7 +13,20 @@ export default function Dashboard(){
  const router=useRouter(); const [data,setData]=useState<Me|null>(null); const [loading,setLoading]=useState(true); const [tab,setTab]=useState("overview"); const [analyzing,setAnalyzing]=useState(false); const [error,setError]=useState("");
  useEffect(()=>{fetch("/api/auth/me").then(async r=>{if(!r.ok){router.replace("/login");return null}return r.json()}).then(x=>{if(x){if(!x.user.strategicProfile?.onboardingCompletedAt){router.replace("/setup");return}setData(x)}}).finally(()=>setLoading(false))},[router]);
  async function logout(){await fetch("/api/auth/logout",{method:"POST"});router.replace("/")}
- async function analyze(){setAnalyzing(true);setError("");try{const r=await fetch("/api/ai/analyze-profile",{method:"POST"});const x=await r.json();if(!r.ok){setError(x.error||"Não foi possível analisar.");return}setData(d => {\n      if (!d || !d.user.strategicProfile) return d;\n      return { ...d, user: { ...d.user, strategicProfile: { ...d.user.strategicProfile, aiProfile: x.aiProfile, aiAnalyzedAt: x.aiAnalyzedAt } } };\n    });setTab("dna")}catch{setError("Não foi possível conectar à IA.")}finally{setAnalyzing(false)}}
+ async function analyze(){setAnalyzing(true);setError("");try{const r=await fetch("/api/ai/analyze-profile",{method:"POST"});const x=await r.json();if(!r.ok){setError(x.error||"Não foi possível analisar.");return}setData(d => {
+      if (!d || !d.user.strategicProfile) return d;
+      return {
+        ...d,
+        user: {
+          ...d.user,
+          strategicProfile: {
+            ...d.user.strategicProfile,
+            aiProfile: x.aiProfile,
+            aiAnalyzedAt: x.aiAnalyzedAt
+          }
+        }
+      };
+    });setTab("dna")}catch{setError("Não foi possível conectar à IA.")}finally{setAnalyzing(false)}}
  if(loading)return <main className="auth"><div className="authbox"><p className="muted">Carregando seu painel...</p></div></main>;
  if(!data)return null; const p=data.user.strategicProfile!; const ai=p.aiProfile; const plan=ai?.weeklyPlan||[]; const activeTitle=tabs.find(x=>x[0]===tab)?.[1]||"Painel";
  return <main className="page"><nav className="nav"><div className="logo">MidiaNet<span>AI</span></div><button className="muted" onClick={logout} style={{background:"none",border:0,cursor:"pointer"}}>Sair</button></nav>
