@@ -30,6 +30,7 @@ model User {
   strategicProfile  StrategicProfile?
   socialAccounts    SocialAccount[]
   contents          Content[]
+  contentDrafts      ContentDraft[]
   events            Event[]
   subscription      Subscription?
   payments          Payment[]
@@ -124,6 +125,43 @@ model MetricSnapshot {
   socialAccount   SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
 
   @@index([socialAccountId, capturedAt])
+}
+
+enum ContentDraftStatus {
+  IDEA
+  DRAFT
+  APPROVED
+  SCHEDULED
+  PUBLISHED
+}
+
+model ContentDraft {
+  id                  String            @id @default(cuid())
+  userId              String
+  scheduledAt         DateTime?
+  publishedAt         DateTime?
+  status              ContentDraftStatus @default(IDEA)
+  dayLabel            String?
+  timeLabel            String?
+  format              String
+  role                String?
+  objective           String?
+  title               String
+  topic               String?
+  hook                String?
+  script              String?
+  caption             String?
+  visualDirection     String?
+  cta                 String?
+  carouselSlides      Json?
+  conversationHistory Json?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  approvedAt          DateTime?
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([userId, scheduledAt])
 }
 
 model Content {
