@@ -52,6 +52,7 @@ model StrategicProfile {
   userId                String   @unique
   profileDescription    String
   desiredOutcome        String
+  instagramProfileUrl   String?
   objective             String?
   conversionGoal        String?
   audience              String?
