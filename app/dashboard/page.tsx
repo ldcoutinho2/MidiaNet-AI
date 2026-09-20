@@ -6,14 +6,14 @@ import { useRouter } from "next/navigation";
 type PlanItem = {
   day: string;
   format: string;
-  objective: string;
+  objective?: string;
   idea: string;
   hook: string;
-  script: string;
-  caption: string;
-  visualDirection: string;
-  cta: string;
-  executionSteps: string[];
+  script?: string;
+  caption?: string;
+  visualDirection?: string;
+  cta?: string;
+  executionSteps?: string[];
 };
 
 type ContentIdea = {
@@ -352,7 +352,7 @@ function Overview({
             </strong>
             <p style={{ marginTop: 6 }}>{x.idea}</p>
             <p className="small muted" style={{ marginTop: 6 }}>
-              Objetivo: {x.objective}
+              Objetivo: {x.objective || "Conteúdo estratégico"}
             </p>
             <p className="small" style={{ marginTop: 6 }}>
               <strong>Gancho:</strong> {x.hook}
@@ -521,7 +521,7 @@ function Scripts({ plan }: { plan: PlanItem[] }) {
               </strong>
 
               <p style={{ marginTop: 10 }}>
-                <strong>🎯 Objetivo:</strong> {x.objective}
+                <strong>🎯 Objetivo:</strong> {x.objective || "Conteúdo estratégico"}
               </p>
 
               <div
@@ -556,21 +556,23 @@ function Scripts({ plan }: { plan: PlanItem[] }) {
               </div>
 
               <p style={{ marginTop: 10 }}>
-                <strong>🎥 O que mostrar:</strong> {x.visualDirection}
+                <strong>🎥 O que mostrar:</strong> {x.visualDirection || "Use cenas, imagens, gravação de tela ou demonstração diretamente relacionadas ao tema."}
               </p>
 
               <p style={{ marginTop: 10 }}>
-                <strong>📣 CTA:</strong> {x.cta}
+                <strong>📣 CTA:</strong> {x.cta || "Peça uma ação específica ao público, de acordo com o objetivo do conteúdo."}
               </p>
 
-              <div style={{ marginTop: 10 }}>
-                <strong>Passo a passo</strong>
-                <ol>
-                  {x.executionSteps.map((step, j) => (
-                    <li key={j}>{step}</li>
-                  ))}
-                </ol>
-              </div>
+              {x.executionSteps?.length ? (
+                <div style={{ marginTop: 10 }}>
+                  <strong>Passo a passo</strong>
+                  <ol>
+                    {x.executionSteps.map((step, j) => (
+                      <li key={j}>{step}</li>
+                    ))}
+                  </ol>
+                </div>
+              ) : null}
             </div>
           ))
         ) : (
