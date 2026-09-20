@@ -14,7 +14,44 @@ const steps = [
   "Revisão",
 ];
 
-type SetupForm = {\n  instagramProfileUrl:string; profileDescription:string; businessType:string; niche:string; offer:string; desiredOutcome:string;\n  audience:string; audienceAge:string; audienceGender:string; audienceLocation:string; audienceInterests:string; audiencePainPoints:string;\n  objective:string; secondaryObjectives:string[]; conversionGoal:string; monetization:string; desiredPositioning:string; brandPersonality:string;\n  contentPreferences:string[]; contentStyle:string; appearsOnCamera:boolean; availableMinutesPerDay:number; availableDaysPerWeek:number; postingFrequency:string;\n  contentAvoid:string; referenceProfiles:string; competitors:string; differentiators:string; currentChallenges:string; salesFunnel:string; ninetyDayGoal:string; successDefinition:string; constraints:string; location:string;\n};\n\nconst initial: SetupForm = {
+type SetupForm = {
+  instagramProfileUrl: string;
+  profileDescription: string;
+  businessType: string;
+  niche: string;
+  offer: string;
+  desiredOutcome: string;
+  audience: string;
+  audienceAge: string;
+  audienceGender: string;
+  audienceLocation: string;
+  audienceInterests: string;
+  audiencePainPoints: string;
+  objective: string;
+  secondaryObjectives: string[];
+  conversionGoal: string;
+  monetization: string;
+  desiredPositioning: string;
+  brandPersonality: string;
+  contentPreferences: string[];
+  contentStyle: string;
+  appearsOnCamera: boolean;
+  availableMinutesPerDay: number;
+  availableDaysPerWeek: number;
+  postingFrequency: string;
+  contentAvoid: string;
+  referenceProfiles: string;
+  competitors: string;
+  differentiators: string;
+  currentChallenges: string;
+  salesFunnel: string;
+  ninetyDayGoal: string;
+  successDefinition: string;
+  constraints: string;
+  location: string;
+};
+
+const initial: SetupForm = {
   instagramProfileUrl: "",
   profileDescription: "",
   businessType: "",
