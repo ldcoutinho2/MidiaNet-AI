@@ -16,6 +16,8 @@ const schema = {
     nextAction: { type: "string" },
     postingFrequency: { type: "string" },
     postingFrequencyReason: { type: "string" },
+    weeklyContentCount: { type: "integer" },
+    dailyContentCount: { type: "string" },
     positioning: { type: "string" },
     audience: { type: "string" },
     conversionStrategy: { type: "string" },
@@ -74,7 +76,7 @@ const schema = {
   },
   required: [
     "objective","currentStage","diagnosis","mainProblem","strategy","weeklyMission","nextAction",
-    "postingFrequency","postingFrequencyReason","positioning","audience","conversionStrategy",
+    "postingFrequency","postingFrequencyReason","weeklyContentCount","dailyContentCount","positioning","audience","conversionStrategy",
     "contentPillars","tone","strengths","opportunities","thirtyDayPlan","weeklyPlan"
   ]
 } as const;
@@ -121,8 +123,10 @@ export async function POST() {
         "Transforme as respostas do cliente em um diagnóstico curto, uma estratégia de 30 dias, uma missão semanal e uma programação completa de conteúdo.",
         "A análise precisa ser específica para este negócio. Nunca entregue conselhos genéricos que poderiam servir para qualquer perfil.",
         "Use nicho, oferta, público, objetivo, posicionamento, diferenciais, rotina, capacidade e formatos escolhidos para decidir o plano.",
-        "Defina uma frequência realista com base na capacidade informada e no objetivo. Não force 3 ou 5 posts por dia se isso não fizer sentido para a rotina do cliente.",
-        "A semana deve ter 7 dias. Em cada dia, crie 1 a 3 slots somente quando a frequência recomendada justificar isso. Cada slot precisa ser um conteúdo completo e pronto para execução.",
+        "Defina explicitamente quantos conteúdos principais serão publicados por semana e quantos por dia. Para perfis cujo objetivo seja crescimento, alcance, viralização ou aquisição de clientes, considere uma programação de 2 a 4 conteúdos principais por dia quando a disponibilidade informada permitir. Não reduza automaticamente para 1 conteúdo por dia. Se a capacidade não comportar essa frequência, explique a redução.",
+        "Stories podem ser usados como complemento e não devem substituir os conteúdos principais. Quando a estratégia recomendar vários conteúdos no mesmo dia, distribua formatos diferentes, por exemplo Foto/Post, Reel/Vídeo e Carrossel, além de Stories quando fizer sentido.",
+        "A programação deve deixar impossível confundir quantos conteúdos existem em cada dia. O weeklyPlan precisa conter todos os slots daquele dia, e cada slot deve ser um conteúdo diferente e completo.",
+        "A semana deve ter 7 dias. Para cada dia, preencha todos os slots previstos pela frequência. Em dias de publicação, prefira 2 a 4 conteúdos principais quando houver capacidade, podendo combinar Foto/Post, Reel/Vídeo e Carrossel. Se não houver publicação principal naquele dia, deixe claro o motivo. Cada slot precisa ser um conteúdo completo e pronto para execução.",
         "Distribua funções claras entre os conteúdos: descoberta/alcance, autoridade, relacionamento, prova quando houver dados reais, oferta/conversão e retenção. Não invente provas.",
         "Para cada conteúdo entregue horário sugerido, formato, função, objetivo, título, tema, gancho, roteiro completo, legenda pronta, direção visual, CTA e passos de execução.",
         "Para Reels, escreva cena a cena quando possível. Se o cliente não aparecer, use tela, B-roll, demonstração, texto ou voz em off.",
