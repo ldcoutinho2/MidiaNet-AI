@@ -156,6 +156,7 @@ export default function Dashboard() {
             </table>
           </div>
         </div>
+        </div>
       )}
 
       {!ai && <div className="grid3" style={{ marginTop: 20 }}>
