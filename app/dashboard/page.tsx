@@ -34,6 +34,8 @@ type AIProfile = {
   nextAction: string;
   postingFrequency: string;
   postingFrequencyReason: string;
+  weeklyContentCount: number;
+  dailyContentCount: string;
   positioning: string;
   audience: string;
   conversionStrategy: string;
@@ -320,6 +322,11 @@ function Week({ ai }: { ai: AIProfile }) {
         <div className="badge">📅 Execução</div>
         <h2 style={{ marginTop: 12 }}>Minha semana</h2>
         <p className="muted" style={{ marginTop: 6 }}>{ai.weeklyMission}</p>
+        <div className="grid3" style={{ marginTop: 14 }}>
+          <Info title="📦 Conteúdos na semana" value={String(ai.weeklyContentCount)} />
+          <Info title="📆 Por dia" value={ai.dailyContentCount} />
+          <Info title="🧩 Estrutura" value="Cada dia mostra horário + formato + conteúdo" />
+        </div>
 
         {ai.weeklyPlan.map((day, i) => (
           <div className="card" key={i} style={{ marginTop: 12 }}>
@@ -327,9 +334,18 @@ function Week({ ai }: { ai: AIProfile }) {
               onClick={() => setOpen(open === i ? -1 : i)}
               style={{ width: "100%", background: "none", border: 0, color: "inherit", textAlign: "left", cursor: "pointer", padding: 0 }}
             >
-              <strong style={{ fontSize: 18 }}>{day.day}</strong>
-              <span className="small muted" style={{ float: "right" }}>{day.slots.length} conteúdo{day.slots.length === 1 ? "" : "s"}</span>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                <strong style={{ fontSize: 18 }}>{day.day}</strong>
+                <span className="badge">{day.slots.length} conteúdo{day.slots.length === 1 ? "" : "s"} neste dia</span>
+              </div>
               <p className="small muted" style={{ marginTop: 6 }}>{day.mission}</p>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 9 }}>
+                {day.slots.map((slot, j) => (
+                  <span key={j} className="small" style={{ padding: "5px 8px", borderRadius: 8, background: "rgba(255,255,255,.05)" }}>
+                    {slot.time} · {slot.format}
+                  </span>
+                ))}
+              </div>
             </button>
             {open === i && (
               <div style={{ marginTop: 10 }}>
