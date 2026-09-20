@@ -7,32 +7,34 @@ const schema = {
   type: "object",
   additionalProperties: false,
   properties: {
+    objective: { type: "string" },
+    currentStage: { type: "string" },
+    diagnosis: { type: "string" },
+    mainProblem: { type: "string" },
+    strategy: { type: "string" },
+    weeklyMission: { type: "string" },
+    nextAction: { type: "string" },
+    postingFrequency: { type: "string" },
+    postingFrequencyReason: { type: "string" },
     positioning: { type: "string" },
     audience: { type: "string" },
-    painPoints: { type: "array", items: { type: "string" } },
-    desires: { type: "array", items: { type: "string" } },
+    conversionStrategy: { type: "string" },
     contentPillars: { type: "array", items: { type: "string" } },
     tone: { type: "array", items: { type: "string" } },
-    contentFormats: { type: "array", items: { type: "string" } },
-    ctaStrategy: { type: "string" },
-    conversionStrategy: { type: "string" },
     strengths: { type: "array", items: { type: "string" } },
     opportunities: { type: "array", items: { type: "string" } },
-    summary: { type: "string" },
-    contentIdeas: {
+    thirtyDayPlan: {
       type: "array",
       items: {
         type: "object",
         additionalProperties: false,
         properties: {
-          title: { type: "string" },
-          format: { type: "string" },
-          objective: { type: "string" },
-          angle: { type: "string" },
-          hook: { type: "string" },
-          whyItFits: { type: "string" }
+          phase: { type: "string" },
+          focus: { type: "string" },
+          action: { type: "string" },
+          expectedSignal: { type: "string" }
         },
-        required: ["title", "format", "objective", "angle", "hook", "whyItFits"]
+        required: ["phase", "focus", "action", "expectedSignal"]
       }
     },
     weeklyPlan: {
@@ -42,27 +44,38 @@ const schema = {
         additionalProperties: false,
         properties: {
           day: { type: "string" },
-          format: { type: "string" },
-          objective: { type: "string" },
-          idea: { type: "string" },
-          hook: { type: "string" },
-          script: { type: "string" },
-          caption: { type: "string" },
-          visualDirection: { type: "string" },
-          cta: { type: "string" },
-          executionSteps: { type: "array", items: { type: "string" } }
+          mission: { type: "string" },
+          slots: {
+            type: "array",
+            items: {
+              type: "object",
+              additionalProperties: false,
+              properties: {
+                time: { type: "string" },
+                format: { type: "string" },
+                role: { type: "string" },
+                objective: { type: "string" },
+                title: { type: "string" },
+                topic: { type: "string" },
+                hook: { type: "string" },
+                script: { type: "string" },
+                caption: { type: "string" },
+                visualDirection: { type: "string" },
+                cta: { type: "string" },
+                executionSteps: { type: "array", items: { type: "string" } }
+              },
+              required: ["time","format","role","objective","title","topic","hook","script","caption","visualDirection","cta","executionSteps"]
+            }
+          }
         },
-        required: [
-          "day", "format", "objective", "idea", "hook", "script",
-          "caption", "visualDirection", "cta", "executionSteps"
-        ]
+        required: ["day","mission","slots"]
       }
     }
   },
   required: [
-    "positioning", "audience", "painPoints", "desires", "contentPillars",
-    "tone", "contentFormats", "ctaStrategy", "conversionStrategy",
-    "strengths", "opportunities", "summary", "contentIdeas", "weeklyPlan"
+    "objective","currentStage","diagnosis","mainProblem","strategy","weeklyMission","nextAction",
+    "postingFrequency","postingFrequencyReason","positioning","audience","conversionStrategy",
+    "contentPillars","tone","strengths","opportunities","thirtyDayPlan","weeklyPlan"
   ]
 } as const;
 
@@ -104,22 +117,20 @@ export async function POST() {
       model: "gpt-5.6-luna",
       tools: instagramReference ? [{ type: "web_search" }] : undefined,
       instructions: [
-        "Você é o estrategista principal do MidiaNet AI.",
-        "Sua função é transformar as respostas do cliente em estratégia e conteúdo pronto para publicar.",
+        "Você é o estrategista principal do MidiaNet AI. Você entrega um plano executável, não um gerador de ideias soltas.",
+        "Transforme as respostas do cliente em um diagnóstico curto, uma estratégia de 30 dias, uma missão semanal e uma programação completa de conteúdo.",
         "A análise precisa ser específica para este negócio. Nunca entregue conselhos genéricos que poderiam servir para qualquer perfil.",
-        "Use o nicho, oferta, público, objetivo, posicionamento, diferenciais, rotina e formatos escolhidos pelo cliente em praticamente todas as decisões.",
+        "Use nicho, oferta, público, objetivo, posicionamento, diferenciais, rotina, capacidade e formatos escolhidos para decidir o plano.",
+        "Defina uma frequência realista com base na capacidade informada e no objetivo. Não force 3 ou 5 posts por dia se isso não fizer sentido para a rotina do cliente.",
+        "A semana deve ter 7 dias. Em cada dia, crie 1 a 3 slots somente quando a frequência recomendada justificar isso. Cada slot precisa ser um conteúdo completo e pronto para execução.",
+        "Distribua funções claras entre os conteúdos: descoberta/alcance, autoridade, relacionamento, prova quando houver dados reais, oferta/conversão e retenção. Não invente provas.",
+        "Para cada conteúdo entregue horário sugerido, formato, função, objetivo, título, tema, gancho, roteiro completo, legenda pronta, direção visual, CTA e passos de execução.",
+        "Para Reels, escreva cena a cena quando possível. Se o cliente não aparecer, use tela, B-roll, demonstração, texto ou voz em off.",
+        "Os horários são hipóteses iniciais. Nunca diga que são horários de maior audiência sem métricas reais.",
+        "A estratégia deve responder claramente: onde o perfil está, onde precisa chegar, qual é o principal problema, o que vamos fazer e o que a pessoa deve fazer agora.",
         "Não invente métricas, depoimentos, resultados, clientes, preços, características da oferta ou fatos sobre o Instagram.",
-        "Quando uma informação essencial não existir, faça uma suposição explícita e conservadora ou construa o conteúdo sem depender dela.",
-        "Não diga apenas 'fale sobre X' ou 'mostre seu produto'. Entregue um tema específico, uma promessa clara, um gancho escrito e uma execução que o cliente consiga gravar ou montar.",
-        "O banco de ideias deve conter pelo menos 10 ideias realmente diferentes e acionáveis, distribuídas entre descoberta, autoridade, relacionamento e conversão quando esses objetivos fizerem sentido.",
-        "O plano semanal deve conter 7 conteúdos completos, um para cada dia, respeitando os formatos escolhidos, a disponibilidade e o objetivo principal.",
-        "Cada roteiro deve ser utilizável sem precisar pedir outra resposta à IA: escreva a abertura, desenvolvimento e fechamento. Para Reels, escreva um roteiro de fala ou texto na tela cena a cena, com duração aproximada de 20 a 45 segundos quando fizer sentido.",
-        "Se o cliente não aparecer em vídeo, crie roteiros que funcionem com gravação de tela, imagens, B-roll, demonstração do produto, texto na tela ou voz em off.",
-        "Cada legenda deve ser uma legenda pronta, não uma instrução sobre como escrever uma legenda.",
-        "Cada CTA deve dizer exatamente qual ação o público deve tomar.",
-        "As orientações visuais devem ser concretas: o que mostrar, em que ordem e qual elemento deve aparecer na tela.",
-        "Os conteúdos devem ter relação entre si durante a semana, formando uma sequência estratégica em vez de sete posts aleatórios.",
-        "Priorize clareza, especificidade, utilidade e conversão. Evite clichês como 'consistência é tudo', 'agregue valor' ou 'conheça seu público' sem transformar isso em uma ação concreta.",
+        "Se faltar uma informação essencial, use uma hipótese conservadora e deixe isso refletido na estratégia.",
+        "Priorize clareza, especificidade e execução. Evite clichês e frases que não orientem uma ação concreta.",
         instagramReference
           ? "O cliente forneceu um perfil do Instagram. Use a busca na web apenas para informações públicas que realmente possam melhorar a análise. Se não houver informação confiável, siga somente com os dados fornecidos."
           : "Não foi fornecido um perfil do Instagram para pesquisa.",
