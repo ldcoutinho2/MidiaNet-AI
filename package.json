@@ -14,7 +14,8 @@
     "@prisma/client": "^6.16.2",
     "next": "15.5.24",
     "react": "19.1.7",
-    "react-dom": "19.1.7"
+    "react-dom": "19.1.7",
+    "openai": "^5.20.0"
   },
   "devDependencies": {
     "@types/node": "^22.15.30",
