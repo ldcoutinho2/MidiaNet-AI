@@ -26,6 +26,7 @@ type Me = {
     strategicProfile: {
       profileDescription: string;
       desiredOutcome: string;
+      instagramProfileUrl?: string | null;
       aiProfile?: AIProfile | null;
       aiAnalyzedAt?: string | null;
     } | null;
@@ -38,7 +39,10 @@ export default function Dashboard() {
   const [data, setData] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
+  const [savingInstagram, setSavingInstagram] = useState(false);
+  const [instagramReference, setInstagramReference] = useState("");
   const [aiError, setAiError] = useState("");
+  const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -49,13 +53,53 @@ export default function Dashboard() {
         }
         return response.json();
       })
-      .then(result => result && setData(result))
+      .then(result => {
+        if (result) {
+          setData(result);
+          setInstagramReference(result.user.strategicProfile?.instagramProfileUrl || "");
+        }
+      })
       .finally(() => setLoading(false));
   }, [router]);
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
     router.replace("/");
+  }
+
+  async function saveInstagramReference() {
+    if (!data?.user.strategicProfile) return;
+    setSavingInstagram(true);
+    setSaveError("");
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profileDescription: data.user.strategicProfile.profileDescription,
+          desiredOutcome: data.user.strategicProfile.desiredOutcome,
+          instagramProfileUrl: instagramReference,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        setSaveError(result.error || "Não foi possível salvar o perfil.");
+        return;
+      }
+      setData(current => current ? {
+        ...current,
+        user: {
+          ...current.user,
+          strategicProfile: current.user.strategicProfile
+            ? { ...current.user.strategicProfile, instagramProfileUrl: result.profile.instagramProfileUrl }
+            : current.user.strategicProfile,
+        },
+      } : current);
+    } catch {
+      setSaveError("Não foi possível salvar a referência do Instagram.");
+    } finally {
+      setSavingInstagram(false);
+    }
   }
 
   async function analyzeWithAI() {
@@ -121,7 +165,7 @@ export default function Dashboard() {
             <small>Instagram</small>
             <strong>{instagram ? "Conectado" : "Ainda não conectado"}</strong>
             <span className="small muted">
-              {instagram?.username ? "@" + instagram.username : "Vamos integrar depois"}
+              {instagram?.username ? "@" + instagram.username : "Referência manual disponível abaixo"}
             </span>
           </div>
 
@@ -143,6 +187,36 @@ export default function Dashboard() {
                 : "Use os dados que você informou"}
             </span>
           </div>
+        </div>
+
+        <div className="feature" style={{ marginTop: 20 }}>
+          <h3>📸 Qual perfil do Instagram devo analisar?</h3>
+          <p className="muted">
+            Cole o link do perfil ou informe o @usuário. A IA tentará encontrar informações públicas na web antes de montar o DNA.
+          </p>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 14 }}>
+            <input
+              value={instagramReference}
+              onChange={event => setInstagramReference(event.target.value)}
+              placeholder="https://instagram.com/seuperfil ou @seuperfil"
+              style={{
+                flex: "1 1 320px",
+                minHeight: 48,
+                borderRadius: 12,
+                padding: "0 14px",
+                border: "1px solid rgba(255,255,255,.12)",
+                background: "rgba(255,255,255,.04)",
+                color: "inherit",
+              }}
+            />
+            <button className="btn" onClick={saveInstagramReference} disabled={savingInstagram}>
+              {savingInstagram ? "Salvando..." : "Salvar perfil"}
+            </button>
+          </div>
+          {saveError && <p className="small" style={{ color: "#fda4af", marginTop: 10 }}>{saveError}</p>}
+          <p className="small muted" style={{ marginTop: 10 }}>
+            Observação: o MidiaNet AI usa apenas informações públicas que conseguir encontrar; não presume acesso ao Instagram privado ou a métricas internas sem integração oficial.
+          </p>
         </div>
 
         <div className="feature" style={{ marginTop: 20 }}>
@@ -288,7 +362,7 @@ export default function Dashboard() {
             <div className="feature">
               <h3>🚀 Próximo passo</h3>
               <p>
-                Clique em “Analisar meu perfil”. O Instagram será integrado depois.
+                Informe o @ ou link do Instagram, salve e depois clique em “Analisar meu perfil”.
               </p>
             </div>
           </div>
