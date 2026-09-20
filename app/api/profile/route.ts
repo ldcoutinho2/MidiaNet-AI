@@ -8,7 +8,7 @@ function clean(value: unknown) {
 }
 
 function cleanJson(value: unknown) {
-  if (!Array.isArray(value)) return null;
+  if (!Array.isArray(value)) return undefined;
   return value.map(item => String(item).trim()).filter(Boolean);
 }
 
