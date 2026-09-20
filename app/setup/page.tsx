@@ -79,12 +79,17 @@ export default function SetupPage() {
         router.replace("/dashboard");
         return;
       }
-      setForm(current => ({
-        ...current,
-        ...Object.fromEntries(Object.keys(initial).map(key => [key, p[key] ?? current[key]])),
-        secondaryObjectives: Array.isArray(p.secondaryObjectives) ? p.secondaryObjectives : [],
-        contentPreferences: Array.isArray(p.contentPreferences) ? p.contentPreferences : [],
-      }));
+      setForm(current => {
+        const next = { ...current } as Record<string, any>;
+        for (const key of Object.keys(initial)) {
+          if (p[key] !== undefined && p[key] !== null) {
+            next[key] = p[key];
+          }
+        }
+        next.secondaryObjectives = Array.isArray(p.secondaryObjectives) ? p.secondaryObjectives : [];
+        next.contentPreferences = Array.isArray(p.contentPreferences) ? p.contentPreferences : [];
+        return next as typeof current;
+      });
     }).finally(()=>setLoading(false));
   }, [router]);
 
