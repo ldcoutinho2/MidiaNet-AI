@@ -10,6 +10,7 @@ export async function PUT(request: Request) {
     const body = await request.json();
     const profileDescription = String(body.profileDescription ?? "").trim();
     const desiredOutcome = String(body.desiredOutcome ?? "").trim();
+    const instagramProfileUrl = String(body.instagramProfileUrl ?? "").trim();
 
     if (!profileDescription || !desiredOutcome) {
       return NextResponse.json({ error: "Preencha as duas perguntas." }, { status: 400 });
@@ -17,8 +18,8 @@ export async function PUT(request: Request) {
 
     const profile = await db.strategicProfile.upsert({
       where: { userId: user.id },
-      update: { profileDescription, desiredOutcome },
-      create: { userId: user.id, profileDescription, desiredOutcome },
+      update: { profileDescription, desiredOutcome, instagramProfileUrl: instagramProfileUrl || null },
+      create: { userId: user.id, profileDescription, desiredOutcome, instagramProfileUrl: instagramProfileUrl || null },
     });
 
     return NextResponse.json({ ok: true, profile });
