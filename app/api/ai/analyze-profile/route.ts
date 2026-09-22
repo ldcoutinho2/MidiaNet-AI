@@ -145,9 +145,60 @@ export async function POST() {
     if (!entitlement.active) return NextResponse.json({ error: "Seu teste terminou. Escolha um plano para continuar." }, { status: 402 });
     const consumption = await consumeContentGeneration(user.id);
     if (!consumption.ok) return NextResponse.json({ error: consumption.error }, { status: 402 });
+    const instagramAccount = user.socialAccounts[0] || null;
     const instagramReference = profile.instagramProfileUrl
       ? normalizeInstagramReference(profile.instagramProfileUrl)
-      : "";
+      : instagramAccount?.username || "";
+
+    let instagramData: any = null;
+    if (instagramAccount) {
+      const latestSnapshot = await db.metricSnapshot.findFirst({
+        where: { socialAccountId: instagramAccount.id },
+        orderBy: { capturedAt: "desc" },
+      });
+      const previousSnapshot = await db.metricSnapshot.findFirst({
+        where: {
+          socialAccountId: instagramAccount.id,
+          id: { not: latestSnapshot?.id || "" },
+        },
+        orderBy: { capturedAt: "desc" },
+      });
+      instagramData = {
+        conectado: true,
+        username: instagramAccount.username,
+        nome: instagramAccount.fullName,
+        bio: instagramAccount.biography,
+        site: instagramAccount.website,
+        fotoPerfil: Boolean(instagramAccount.profilePictureUrl),
+        seguidores: instagramAccount.followersCount,
+        seguindo: instagramAccount.followsCount,
+        publicacoes: instagramAccount.mediaCount,
+        ultimaSincronizacao: instagramAccount.lastSyncedAt,
+        metricasAtuais: latestSnapshot ? {
+          seguidores: latestSnapshot.followers,
+          alcance: latestSnapshot.reach,
+          visualizacoes: latestSnapshot.views,
+          curtidas: latestSnapshot.likes,
+          comentarios: latestSnapshot.comments,
+          compartilhamentos: latestSnapshot.shares,
+          salvos: latestSnapshot.saves,
+          capturadoEm: latestSnapshot.capturedAt,
+        } : null,
+        metricasAnteriores: previousSnapshot ? {
+          seguidores: previousSnapshot.followers,
+          alcance: previousSnapshot.reach,
+          visualizacoes: previousSnapshot.views,
+          curtidas: previousSnapshot.likes,
+          comentarios: previousSnapshot.comments,
+          compartilhamentos: previousSnapshot.shares,
+          salvos: previousSnapshot.saves,
+          capturadoEm: previousSnapshot.capturedAt,
+        } : null,
+        ultimosConteudos: Array.isArray(instagramAccount.mediaCache)
+          ? instagramAccount.mediaCache
+          : [],
+      };
+    }
 
     const response = await openai.responses.create({
       model: "gpt-5.6-luna",
@@ -156,7 +207,11 @@ export async function POST() {
         "Você é o estrategista principal do MidiaNet AI. Você entrega um plano executável, não um gerador de ideias soltas.",
         "Transforme as respostas do cliente em um diagnóstico curto, uma estratégia de 30 dias, uma missão semanal e uma programação completa de conteúdo.",
         "A análise precisa ser específica para este negócio. Nunca entregue conselhos genéricos que poderiam servir para qualquer perfil.",
-        "Use nicho, oferta, público, objetivo, posicionamento, diferenciais, rotina, capacidade e formatos escolhidos para decidir o plano. A frequência informada pelo cliente é uma preferência de referência; não trate automaticamente uma meta de 5 conteúdos por semana como limite se a capacidade e o objetivo indicarem uma frequência maior. Só trate como limite quando o cliente disser explicitamente que não consegue produzir mais.",
+        "Use nicho, oferta, público, objetivo, posicionamento, diferenciais, rotina, capacidade e formatos escolhidos para decidir o plano.",
+        "Quando houver uma conta do Instagram conectada, trate o bloco instagramConectado como fonte prioritária para o diagnóstico. Não substitua dados reais por suposições.",
+        "Compare métricas atuais e anteriores quando existirem. Descreva variações como observações do histórico disponível, sem afirmar causalidade.",
+        "Use bio, nome, site, seguidores, publicações e últimos conteúdos para tornar a auditoria específica. Se não houver imagens reais disponíveis para inspeção visual, não finja que viu a grade, capas dos destaques ou qualidade visual das fotos.",
+        "Se houver apenas metadados dos últimos conteúdos, use-os para avaliar temas, formatos, frequência e sinais de engajamento, mas declare a limitação para aspectos visuais." A frequência informada pelo cliente é uma preferência de referência; não trate automaticamente uma meta de 5 conteúdos por semana como limite se a capacidade e o objetivo indicarem uma frequência maior. Só trate como limite quando o cliente disser explicitamente que não consegue produzir mais.",
         "Defina explicitamente quantos conteúdos principais serão publicados por semana e quantos por dia. Para perfis cujo objetivo seja crescimento, alcance, viralização ou aquisição de clientes, a programação principal desta versão deve usar 3 publicações por dia: Foto/Post às 12:30, Reel/Vídeo às 19:00 e Carrossel às 21:00. Além delas, cada dia deve ter 1 Story às 09:00 como conteúdo complementar. Portanto, o weeklyPlan desta versão deve ter exatamente 4 slots por dia, totalizando 28 conteúdos na semana.",
         "Stories são o primeiro conteúdo do dia e devem acontecer às 09:00. Depois, obrigatoriamente, vêm Foto/Post às 12:30, Reel/Vídeo às 19:00 e Carrossel às 21:00. Não troque essa ordem nem reduza a quantidade nesta versão.",
         "A programação deve deixar impossível confundir quantos conteúdos existem em cada dia. O weeklyPlan precisa conter todos os slots daquele dia, e cada slot deve ser um conteúdo diferente e completo.",
