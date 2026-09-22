@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { consumeImageGeneration } from "@/lib/entitlements";
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -33,6 +34,11 @@ export async function POST(request: Request) {
 
     const b64 = data?.data?.[0]?.b64_json;
     if (!b64) return NextResponse.json({ error: "A IA não retornou a imagem." }, { status: 502 });
+
+    const consumed = await consumeImageGeneration(user.id);
+    if (!consumed.ok) {
+      return NextResponse.json({ error: consumed.error }, { status: 402 });
+    }
 
     return NextResponse.json({ ok: true, image: `data:image/png;base64,${b64}` });
   } catch (error) {
