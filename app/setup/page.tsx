@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const steps = ["Seu negócio", "Público e objetivo", "Conteúdo e vendas", "Revisão"];
+const steps = ["Seu negócio", "Público e objetivo", "Conteúdo e vendas", "Conte o que você quer", "Revisão"];
 
 type SetupForm = {
   instagramProfileUrl:string; profileDescription:string; businessType:string; niche:string; offer:string; desiredOutcome:string;
@@ -11,7 +11,7 @@ type SetupForm = {
   objective:string; secondaryObjectives:string[]; conversionGoal:string; monetization:string; desiredPositioning:string; brandPersonality:string;
   contentPreferences:string[]; contentStyle:string; appearsOnCamera:boolean; availableMinutesPerDay:number; availableDaysPerWeek:number;
   postingFrequency:string; contentAvoid:string; referenceProfiles:string; competitors:string; differentiators:string; currentChallenges:string;
-  salesFunnel:string; ninetyDayGoal:string; successDefinition:string; constraints:string; location:string;
+  salesFunnel:string; ninetyDayGoal:string; successDefinition:string; constraints:string; location:string; freeContext:string;
 };
 
 const initial:SetupForm={
@@ -20,7 +20,7 @@ const initial:SetupForm={
   objective:"",secondaryObjectives:[],conversionGoal:"",monetization:"",desiredPositioning:"",brandPersonality:"",
   contentPreferences:[],contentStyle:"",appearsOnCamera:true,availableMinutesPerDay:60,availableDaysPerWeek:5,
   postingFrequency:"",contentAvoid:"",referenceProfiles:"",competitors:"",differentiators:"",currentChallenges:"",
-  salesFunnel:"",ninetyDayGoal:"",successDefinition:"",constraints:"",location:""
+  salesFunnel:"",ninetyDayGoal:"",successDefinition:"",constraints:"",location:"",freeContext:""
 };
 
 function Field({label,value,onChange,placeholder,textarea=false,optional=false}:any){
@@ -49,7 +49,7 @@ export default function SetupPage(){
    if(step===2 && (!form.contentPreferences.length||!form.postingFrequency)) return "Escolha pelo menos um tipo de conteúdo e uma frequência que você consegue manter.";
    return "";
  }
- function next(){const m=validate();if(m){setError(m);return;}setError("");setStep(s=>Math.min(3,s+1));}
+ function next(){const m=validate();if(m){setError(m);return;}setError("");setStep(s=>Math.min(4,s+1));}
  async function finish(){
    setError(""); const m=validate(); if(m){setError(m);setStep(2);return;} setSaving(true);
    try{const response=await fetch("/api/profile",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});
@@ -110,6 +110,13 @@ export default function SetupPage(){
     <Field label="Alguma coisa que você não quer fazer?" value={form.contentAvoid} onChange={(v:string)=>set("contentAvoid",v)} placeholder="Ex.: não quero aparecer em vídeo." optional/>
    </>}
 
+   {step===4&&<>
+    <h2>Tem algo que você quer que a IA saiba?</h2>
+    <p className="muted" style={{marginTop:8,lineHeight:1.6}}>Essa é a parte mais importante para contar o que as perguntas não captaram. Fale livremente sobre seu perfil, o que está te incomodando, o que já tentou, o que você quer mudar e onde quer chegar.</p>
+    <Field label="Fale livremente sobre seu perfil" value={form.freeContext} onChange={(v:string)=>set("freeContext",v)} placeholder="Ex.: sinto que meu perfil está parado, não gosto da aparência da grade, não sei o que postar, quero parecer mais profissional e começar a gerar clientes pelo Instagram..." textarea/>
+    <p className="small muted" style={{marginTop:8}}>Opcional. Quanto mais contexto fizer sentido para você, mais personalizada pode ser a análise.</p>
+   </>}
+
    {step===3&&<>
     <h2>Está tudo certo?</h2><p className="muted">A IA vai usar essas respostas, seu Instagram público quando disponível e os resultados do perfil para montar a estratégia.</p>
     <div className="feature" style={{marginTop:18}}>
@@ -119,7 +126,7 @@ export default function SetupPage(){
       <p style={{marginTop:8}}><strong>Público:</strong> {form.audience}</p>
       <p style={{marginTop:8}}><strong>Objetivo:</strong> {form.objective}</p>
       <p style={{marginTop:8}}><strong>Conteúdo:</strong> {form.contentPreferences.join(", ")}</p>
-      <p style={{marginTop:8}}><strong>Frequência:</strong> {form.postingFrequency}</p>
+      <p style={{marginTop:8}}><strong>Frequência:</strong> {form.postingFrequency}</p>{form.freeContext&&<p style={{marginTop:8}}><strong>Contexto:</strong> {form.freeContext}</p>}
     </div>
     <div className="feature" style={{marginTop:14}}><h3>🧠 Depois disso</h3><p>A IA transforma essas informações em auditoria do perfil, diagnóstico, posicionamento, estratégia, plano semanal e próximos conteúdos.</p></div>
    </>}
@@ -127,7 +134,7 @@ export default function SetupPage(){
    {error&&<p className="small" style={{color:"#fda4af",marginTop:16}}>{error}</p>}
    <div style={{display:"flex",justifyContent:"space-between",gap:12,marginTop:24}}>
     <button className="btn secondary" onClick={()=>setStep(s=>Math.max(0,s-1))} disabled={step===0}>Voltar</button>
-    {step<3?<button className="btn primary" onClick={next}>Continuar →</button>:<button className="btn primary" onClick={finish} disabled={saving}>{saving?"Salvando...":"🚀 Criar minha estratégia"}</button>}
+    {step<4?<button className="btn primary" onClick={next}>Continuar →</button>:<button className="btn primary" onClick={finish} disabled={saving}>{saving?"Salvando...":"🚀 Criar minha estratégia"}</button>}
    </div>
  </div></main>;
 }
