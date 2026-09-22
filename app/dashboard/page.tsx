@@ -80,7 +80,8 @@ function Plans({subscription}:{subscription:any}) {
    try{
      const r=await fetch("/api/payments/pushinpay/create",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({plan})});
      const x=await r.json();
-     if(!r.ok){setError(x.error||"Não foi possível gerar o PIX.");return;}
+     if(!r.ok){setError(x.error||"Não foi possível abrir o Mercado Pago.");return;}
+     if(x.checkoutUrl){window.location.href=x.checkoutUrl;return;}
      setPayment(x);
    }catch{setError("Não foi possível conectar ao pagamento.");}
    finally{setLoading(null);}
