@@ -1,95 +1,126 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
-const PLANS = {
-  weekly: { days: 7 },
-  monthly: { days: 30 },
-} as const;
+const PLANS = { weekly: 7, monthly: 30 } as const;
 
-function getPlan(provider?: string | null) {
-  const key = provider?.split(":")[1] as keyof typeof PLANS | undefined;
-  return key && PLANS[key] ? PLANS[key] : null;
+function parseReference(reference: string) {
+  const parts = reference.split(":");
+  if (parts.length < 4 || parts[0] !== "midianet") return null;
+  const plan = parts[2] as keyof typeof PLANS;
+  if (!PLANS[plan]) return null;
+  return { userId: parts[1], plan, days: PLANS[plan] };
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
-    const transactionId = String(body.id || body.transaction_id || body.payment_id || body.uuid || "");
-    if (!transactionId) return NextResponse.json({ ok: false, error: "Pagamento não identificado." }, { status: 400 });
+    const paymentId = String(body.data?.id || body.id || "");
+    if (!paymentId) return NextResponse.json({ ok: true });
 
-    const payment = await db.payment.findUnique({ where: { providerPaymentId: transactionId } });
-    if (!payment) return NextResponse.json({ ok: true });
+    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+    if (!accessToken) return NextResponse.json({ ok: false }, { status: 503 });
 
-    let status = String(body.status || body.transaction_status || "").toLowerCase();
+    const paymentResponse = await fetch(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`, {
+      headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
+      cache: "no-store",
+    });
+    if (!paymentResponse.ok) return NextResponse.json({ ok: false }, { status: 502 });
 
-    const token = process.env.PUSHINPAY_TOKEN;
-    if (token) {
-      const check = await fetch(`https://api.pushinpay.com.br/api/transactions/${encodeURIComponent(transactionId)}`, {
-        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-        cache: "no-store",
-      }).catch(() => null);
-      if (check?.ok) {
-        const verified = await check.json().catch(() => ({}));
-        status = String(verified.status || verified.transaction_status || status).toLowerCase();
-      }
-    }
+    const payment = await paymentResponse.json();
+    const reference = parseReference(String(payment.external_reference || ""));
+    if (!reference) return NextResponse.json({ ok: true });
 
-    const paid = ["paid", "approved", "completed", "success"].includes(status);
-    if (!paid) {
-      await db.payment.update({ where: { id: payment.id }, data: { status: status || "PENDING" } });
-      return NextResponse.json({ ok: true, status: status || "PENDING" });
-    }
-
-    if (payment.status === "PAID") return NextResponse.json({ ok: true, status: "PAID" });
-
-    const plan = getPlan(payment.provider);
-    if (!plan) return NextResponse.json({ ok: false, error: "Plano do pagamento não identificado." }, { status: 500 });
+    const status = String(payment.status || "").toLowerCase();
+    const existingPaid = await db.payment.findFirst({
+      where: { providerPaymentId: String(paymentId), status: "PAID" },
+    });
+    if (existingPaid) return NextResponse.json({ ok: true });
 
     const now = new Date();
-    const subscription = await db.subscription.findUnique({ where: { userId: payment.userId } });
+    if (status !== "approved") {
+      const existingPending = await db.payment.findFirst({
+        where: {
+          userId: reference.userId,
+          provider: `mercadopago:${reference.plan}:preference`,
+          status: "PENDING",
+        },
+        orderBy: { createdAt: "desc" },
+      });
+      if (existingPending) {
+        await db.payment.update({ where: { id: existingPending.id }, data: { status: status.toUpperCase() } });
+      }
+      return NextResponse.json({ ok: true, status });
+    }
+
+    const existingByPreference = await db.payment.findFirst({
+      where: {
+        userId: reference.userId,
+        provider: `mercadopago:${reference.plan}:preference`,
+        providerPaymentId: { startsWith: "preference:" },
+        status: { not: "PAID" },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const subscription = await db.subscription.findUnique({ where: { userId: reference.userId } });
     const currentEnd = subscription?.currentPeriodEnd && subscription.currentPeriodEnd.getTime() > now.getTime()
       ? subscription.currentPeriodEnd
       : now;
-    const periodEnd = new Date(currentEnd.getTime() + plan.days * 24 * 60 * 60 * 1000);
+    const periodEnd = new Date(currentEnd.getTime() + reference.days * 86400000);
 
-    await db.$transaction([
-      db.payment.update({
-        where: { id: payment.id },
-        data: { status: "PAID", paidAt: now },
-      }),
-      db.subscription.upsert({
-        where: { userId: payment.userId },
+    await db.$transaction(async tx => {
+      if (existingByPreference) {
+        await tx.payment.update({
+          where: { id: existingByPreference.id },
+          data: { providerPaymentId: String(paymentId), status: "PAID", paidAt: now },
+        });
+      } else {
+        await tx.payment.create({
+          data: {
+            userId: reference.userId,
+            provider: `mercadopago:${reference.plan}:payment`,
+            providerPaymentId: String(paymentId),
+            amountCents: Math.round(Number(payment.transaction_amount || 0) * 100),
+            currency: "BRL",
+            status: "PAID",
+            paidAt: now,
+          },
+        });
+      }
+      await tx.subscription.upsert({
+        where: { userId: reference.userId },
         update: {
           status: "ACTIVE",
-          plan: payment.provider?.split(":")[1]?.toUpperCase() || "PAID",
+          plan: reference.plan.toUpperCase(),
           currentPeriodEnd: periodEnd,
+          trialEndsAt: null,
         },
         create: {
-          userId: payment.userId,
+          userId: reference.userId,
           status: "ACTIVE",
-          plan: payment.provider?.split(":")[1]?.toUpperCase() || "PAID",
+          plan: reference.plan.toUpperCase(),
           currentPeriodEnd: periodEnd,
         },
-      }),
-      db.event.create({
+      });
+      await tx.event.create({
         data: {
-          userId: payment.userId,
+          userId: reference.userId,
           name: "payment_approved",
-          metadata: { provider: "pushinpay", transactionId, plan: payment.provider },
+          metadata: { provider: "mercadopago", paymentId, plan: reference.plan },
         },
-      }),
-      db.event.create({
+      });
+      await tx.event.create({
         data: {
-          userId: payment.userId,
+          userId: reference.userId,
           name: "subscription_started",
-          metadata: { plan: payment.provider },
+          metadata: { provider: "mercadopago", plan: reference.plan },
         },
-      }),
-    ]);
+      });
+    });
 
-    return NextResponse.json({ ok: true, status: "PAID" });
+    return NextResponse.json({ ok: true, status: "approved" });
   } catch (error) {
-    console.error("pushinpay_webhook_error", error);
+    console.error("mercadopago_webhook_error", error);
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 }
