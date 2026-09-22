@@ -87,6 +87,7 @@ function SalesLanding() {
           </p>
         </div>
         <div className="salesCards">
+          <div className="salesCard"><span>🔍</span><h3>Auditoria do perfil</h3><p>Antes de mandar você postar mais, a IA analisa a primeira impressão, nome, bio, foto, destaques, grade e conversão e mostra o que vale corrigir.</p></div>
           <div className="salesCard"><span>🎯</span><h3>Estratégia personalizada</h3><p>A IA cruza seu objetivo, nicho, público, oferta, posicionamento e contexto para estruturar a direção do conteúdo.</p></div>
           <div className="salesCard"><span>📅</span><h3>Plano semanal</h3><p>Você recebe uma sequência de conteúdos organizada por dia, formato, horário, objetivo, gancho, roteiro, legenda e CTA.</p></div>
           <div className="salesCard"><span>✍️</span><h3>Criação assistida</h3><p>Transforme uma ideia em diferentes formatos e refine títulos, ganchos, roteiros, legendas e chamadas para ação.</p></div>
