@@ -57,8 +57,8 @@ const schema = {
               type: "object",
               additionalProperties: false,
               properties: {
-                time: { type: "string" },
-                format: { type: "string" },
+                time: { type: "string", enum: ["09:00","12:30","19:00","21:00"] },
+                format: { type: "string", enum: ["Story","Foto","Reel","Carrossel"] },
                 role: { type: "string" },
                 objective: { type: "string" },
                 title: { type: "string" },
