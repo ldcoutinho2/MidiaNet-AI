@@ -44,7 +44,7 @@ export async function POST(request: Request) {
             status: "TRIALING",
             plan: "TRIAL_2_DAYS",
             trialEndsAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-            trialContentLimit: 8,
+            trialContentLimit: 1,
             trialImageLimit: 2,
           },
         },
