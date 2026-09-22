@@ -19,7 +19,7 @@ export default function Welcome() {
     <p className="muted" style={{fontSize:17,lineHeight:1.6}}>Antes de pedir qualquer coisa para a IA, vamos mostrar o que você pode fazer e depois entender seu perfil.</p>
     <div className="grid3" style={{marginTop:22}}>
       <div className="card"><strong>2 dias</strong><p className="small muted">teste gratuito</p></div>
-      <div className="card"><strong>28 conteúdos</strong><p className="small muted">até 4 por dia no teste</p></div>
+      <div className="card"><strong>8 conteúdos</strong><p className="small muted">até 4 por dia no teste</p></div>
       <div className="card"><strong>4 imagens</strong><p className="small muted">geração visual no teste</p></div>
     </div>
     <div className="feature" style={{marginTop:18}}>
