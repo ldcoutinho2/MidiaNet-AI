@@ -47,7 +47,7 @@ const schema = {
         grid: { type: "object", additionalProperties: false, properties: { diagnosis:{type:"string"}, recommendation:{type:"string"} }, required:["diagnosis","recommendation"] },
         conversion: { type: "object", additionalProperties: false, properties: { diagnosis:{type:"string"}, recommendation:{type:"string"}, ctaSuggestion:{type:"string"} }, required:["diagnosis","recommendation","ctaSuggestion"] },
         priorities: { type: "array", minItems:3, maxItems:5, items:{type:"string"} },
-        limitations: { type:"array", items:{type:"string"} }
+        limitations: { type: "array", items:{type:"string"} }
       },
       required: ["overallScore","summary","firstImpression","bio","profilePhoto","nameAndPositioning","highlights","grid","conversion","priorities","limitations"]
     },
@@ -214,7 +214,8 @@ export async function POST() {
         "Use bio, nome, site, seguidores, publicações e últimos conteúdos para tornar a auditoria específica. Se não houver imagens reais disponíveis para inspeção visual, não finja que viu a grade, capas dos destaques ou qualidade visual das fotos.",
         "Se houver apenas metadados dos últimos conteúdos, use-os para avaliar temas, formatos, frequência e sinais de engajamento, mas declare a limitação para aspectos visuais.",
         "Quando imagens forem anexadas ao input, faça uma análise visual objetiva delas: composição, legibilidade, hierarquia, consistência, uso de texto, enquadramento e qualidade percebida. Não identifique pessoas reais nem invente elementos que não estejam visíveis.",
-        "Use as imagens somente para avaliar os conteúdos realmente enviados. Não trate os últimos 6 conteúdos como se fossem necessariamente toda a grade do perfil." A frequência informada pelo cliente é uma preferência de referência; não trate automaticamente uma meta de 5 conteúdos por semana como limite se a capacidade e o objetivo indicarem uma frequência maior. Só trate como limite quando o cliente disser explicitamente que não consegue produzir mais.",
+        "Use as imagens somente para avaliar os conteúdos realmente enviados. Não trate os últimos 6 conteúdos como se fossem necessariamente toda a grade do perfil.",
+        "A frequência informada pelo cliente é uma preferência de referência; não trate automaticamente uma meta de 5 conteúdos por semana como limite se a capacidade e o objetivo indicarem uma frequência maior. Só trate como limite quando o cliente disser explicitamente que não consegue produzir mais.",
         "Defina explicitamente quantos conteúdos principais serão publicados por semana e quantos por dia. Para perfis cujo objetivo seja crescimento, alcance, viralização ou aquisição de clientes, a programação principal desta versão deve usar 3 publicações por dia: Foto/Post às 12:30, Reel/Vídeo às 19:00 e Carrossel às 21:00. Além delas, cada dia deve ter 1 Story às 09:00 como conteúdo complementar. Portanto, o weeklyPlan desta versão deve ter exatamente 4 slots por dia, totalizando 28 conteúdos na semana.",
         "Stories são o primeiro conteúdo do dia e devem acontecer às 09:00. Depois, obrigatoriamente, vêm Foto/Post às 12:30, Reel/Vídeo às 19:00 e Carrossel às 21:00. Não troque essa ordem nem reduza a quantidade nesta versão.",
         "A programação deve deixar impossível confundir quantos conteúdos existem em cada dia. O weeklyPlan precisa conter todos os slots daquele dia, e cada slot deve ser um conteúdo diferente e completo.",
