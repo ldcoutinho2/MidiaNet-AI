@@ -100,11 +100,20 @@ model SocialAccount {
   userId          String
   platform        SocialPlatform
   platformUserId  String
-  username        String?
-  accessToken     String?
-  tokenExpiresAt  DateTime?
-  connectedAt     DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  username          String?
+  fullName          String?
+  biography         String?
+  website           String?
+  profilePictureUrl String?
+  followersCount    Int?
+  followsCount      Int?
+  mediaCount        Int?
+  mediaCache        Json?
+  lastSyncedAt      DateTime?
+  accessToken       String?
+  tokenExpiresAt    DateTime?
+  connectedAt       DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
   user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   metricSnapshots MetricSnapshot[]
   contents        Content[]
