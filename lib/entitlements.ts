@@ -9,7 +9,7 @@ export async function getEntitlement(userId: string) {
         status: "TRIALING",
         plan: "TRIAL_2_DAYS",
         trialEndsAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-        trialContentLimit: 8,
+        trialContentLimit: 1,
         trialImageLimit: 2,
       },
     });
@@ -43,6 +43,19 @@ export async function consumeImageGeneration(userId: string) {
   const e = await getEntitlement(userId);
   if (!e.active) return { ok: false as const, error: "Seu teste terminou. Escolha um plano para continuar gerando imagens." };
   if (e.trialActive && e.imageRemaining <= 0) return { ok: false as const, error: "Você atingiu o limite de imagens do teste. Escolha um plano para continuar." };
-  if (e.trialActive) await db.subscription.update({ where: { userId }, data: { trialImageUsed: { increment: 1 } } });
+  if (e.trialActive) {
+    const updated = await db.subscription.updateMany({
+      where: {
+        userId,
+        status: "TRIALING",
+        trialEndsAt: { gt: new Date() },
+        trialImageUsed: { lt: e.subscription.trialImageLimit },
+      },
+      data: { trialImageUsed: { increment: 1 } },
+    });
+    if (updated.count !== 1) {
+      return { ok: false as const, error: "Você atingiu o limite de imagens do teste. Escolha um plano para continuar." };
+    }
+  }
   return { ok: true as const };
 }
