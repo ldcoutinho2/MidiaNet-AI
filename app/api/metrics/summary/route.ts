@@ -19,7 +19,19 @@ export async function GET() {
 
   return NextResponse.json({
     connected: true,
-    account: { username: account.username },
+    account: {
+      id: account.id,
+      username: account.username,
+      fullName: account.fullName,
+      biography: account.biography,
+      website: account.website,
+      profilePictureUrl: account.profilePictureUrl,
+      followersCount: account.followersCount,
+      followsCount: account.followsCount,
+      mediaCount: account.mediaCount,
+      mediaCache: account.mediaCache,
+      lastSyncedAt: account.lastSyncedAt,
+    },
     latest,
     previous,
     snapshots: snapshots.reverse(),
