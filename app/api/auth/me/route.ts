@@ -11,7 +11,9 @@ export async function GET() {
       id: user.id,
       name: user.name,
       email: user.email,
+      phone: user.phone,
       strategicProfile: user.strategicProfile,
+      subscription: user.subscription,
       socialAccounts: user.socialAccounts.map((account) => ({
         id: account.id,
         platform: account.platform,
