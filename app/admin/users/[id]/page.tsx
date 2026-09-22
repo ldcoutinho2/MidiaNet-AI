@@ -33,6 +33,28 @@ export default function AdminUserPage() {
   const paid = (data.payments || []).filter((p:any) => p.status === "PAID").reduce((sum:number,p:any) => sum + p.amountCents / 100, 0);
   const lastMetric = ig?.metricSnapshots?.[0];
 
+  async function activate(plan:"weekly"|"monthly") {
+    const response = await fetch("/api/admin/users/" + encodeURIComponent(u.id) + "/activate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan }),
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setError(body.error || "Não foi possível ativar o plano.");
+      return;
+    }
+    setData((current:any) => ({
+      ...current,
+      subscription: {
+        ...(current.subscription || {}),
+        status: "ACTIVE",
+        plan: plan.toUpperCase(),
+        currentPeriodEnd: body.currentPeriodEnd,
+      },
+    }));
+  }
+
   return <main className="page adminPage">
     <nav className="nav">
       <div className="logo">MidiaNet<span>AI</span> <small style={{color:"#a1a1aa",fontSize:12}}>ADMIN</small></div>
@@ -47,6 +69,16 @@ export default function AdminUserPage() {
         </div>
         <span className="badge">{sub?.status === "ACTIVE" ? "Ativo" : sub?.status === "TRIALING" ? "Período de teste" : sub?.status || "Sem plano"}</span>
       </div>
+
+      <section className="feature" style={{marginTop:18}}>
+        <div className="badge">📲 Venda pelo WhatsApp</div>
+        <h2 style={{marginTop:10}}>Ativar acesso manualmente</h2>
+        <p className="small muted" style={{marginTop:7}}>Use depois de confirmar o pagamento recebido pelo WhatsApp. O cliente não precisa passar pelo checkout online.</p>
+        <div className="row" style={{gap:10,marginTop:14,flexWrap:"wrap"}}>
+          <button className="btn primary" onClick={()=>activate("weekly")}>Ativar 7 dias · R$ 14,99</button>
+          <button className="btn primary" onClick={()=>activate("monthly")}>Ativar 30 dias · R$ 29,99</button>
+        </div>
+      </section>
 
       <div className="adminStats">
         <AdminStat icon="💳" label="Plano" value={sub?.plan || "—"} />
