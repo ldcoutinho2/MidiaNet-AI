@@ -1,22 +1,26 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { syncInstagramAccount } from "@/lib/instagram";
 
 export async function POST() {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+  if (!user) return NextResponse.json({ ok: false, error: "Não autenticado." }, { status: 401 });
 
-  const account = user.socialAccounts[0];
-  if (!account) return NextResponse.json({ error: "Nenhuma conta do Instagram conectada." }, { status: 400 });
-  if (!account.accessToken) return NextResponse.json({ error: "O token do Instagram não está disponível. Reconecte a conta." }, { status: 400 });
+  const account = await db.socialAccount.findFirst({
+    where: { userId: user.id, platform: "INSTAGRAM" },
+  });
+
+  if (!account) {
+    return NextResponse.json({ ok: false, error: "Nenhum Instagram conectado." }, { status: 404 });
+  }
 
   try {
-    const result = await syncInstagramAccount(account.id, account.accessToken);
-    return NextResponse.json({ ok: true, account: result });
+    const data = await syncInstagramAccount(account.id);
+    return NextResponse.json({ ok: true, account: data });
   } catch (error) {
-    console.error("instagram_sync_error", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Não foi possível sincronizar o Instagram agora." },
+      { ok: false, error: error instanceof Error ? error.message : "Não foi possível sincronizar o Instagram." },
       { status: 502 }
     );
   }
