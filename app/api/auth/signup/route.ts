@@ -8,11 +8,15 @@ export async function POST(request: Request) {
     const name = String(body.name ?? "").trim();
     const email = String(body.email ?? "").trim().toLowerCase();
     const password = String(body.password ?? "");
+    const phone = String(body.phone ?? "").trim();
     const profileDescription = String(body.profileDescription ?? "").trim();
     const desiredOutcome = String(body.desiredOutcome ?? "").trim();
 
     if (!email || !email.includes("@")) {
       return NextResponse.json({ error: "Informe um e-mail válido." }, { status: 400 });
+    }
+    if (!phone || phone.replace(/\D/g, "").length < 10) {
+      return NextResponse.json({ error: "Informe um número de celular válido." }, { status: 400 });
     }
     if (password.length < 8) {
       return NextResponse.json({ error: "A senha precisa ter pelo menos 8 caracteres." }, { status: 400 });
@@ -30,9 +34,19 @@ export async function POST(request: Request) {
       data: {
         name: name || null,
         email,
+        phone,
         passwordHash: hashPassword(password),
         strategicProfile: {
           create: { profileDescription, desiredOutcome },
+        },
+        subscription: {
+          create: {
+            status: "TRIALING",
+            plan: "TRIAL_2_DAYS",
+            trialEndsAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+            trialContentLimit: 28,
+            trialImageLimit: 4,
+          },
         },
       },
     });
