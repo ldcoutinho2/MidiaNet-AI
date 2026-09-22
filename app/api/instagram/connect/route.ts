@@ -4,12 +4,19 @@ import { connectInstagramAccount, lookupInstagramProfile } from "@/lib/instagram
 import { db } from "@/lib/db";
 
 function normalize(value: string) {
-  return value
-    .trim()
-    .replace(/^https?:\\/\\/(www\\.)?instagram\\.com\\//i, "")
-    .replace(/^@/, "")
-    .split(/[/?#]/)[0]
-    .toLowerCase();
+  let result = value.trim();
+
+  if (result.startsWith("http://") || result.startsWith("https://")) {
+    try {
+      const url = new URL(result);
+      const parts = url.pathname.split("/").filter(Boolean);
+      result = parts[0] || "";
+    } catch {
+      result = "";
+    }
+  }
+
+  return result.replace(/^@/, "").split(/[/?#]/)[0].toLowerCase();
 }
 
 function validUsername(value: string) {
@@ -22,12 +29,14 @@ export async function GET(req: Request) {
 
   const raw = new URL(req.url).searchParams.get("username") || "";
   const username = normalize(raw);
+
   if (!validUsername(username)) {
     return NextResponse.json({ ok: false, error: "Informe um @ do Instagram válido." }, { status: 400 });
   }
 
   try {
     const profile = await lookupInstagramProfile(username);
+
     return NextResponse.json({
       ok: true,
       profile: {
@@ -62,6 +71,7 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => ({}));
   const username = normalize(String(body?.username || ""));
+
   if (!validUsername(username)) {
     return NextResponse.json({ ok: false, error: "Informe um @ do Instagram válido." }, { status: 400 });
   }
