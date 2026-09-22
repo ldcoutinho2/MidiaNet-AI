@@ -16,7 +16,7 @@ export async function GET() {
     return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
   }
 
-  const [users, trialing, active, connected, drafts, payments, paidRevenue, events, recentUsers, recentPayments] =
+  const [users, trialing, active, connected, drafts, payments, paidRevenue, events, recentUsers, recentPayments, recentMarketingEvents] =
     await Promise.all([
       db.user.count(),
       db.subscription.count({ where: { status: "TRIALING" } }),
@@ -43,19 +43,47 @@ export async function GET() {
           user: { select: { name: true, email: true } },
         },
       }),
+      db.event.findMany({
+        where: {
+          occurredAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+          name: { in: ["page_view","signup_started","signup_completed","instagram_connect_started","instagram_connected","analysis_started","analysis_completed","strategy_created","checkout_started","payment_approved","subscription_started"] },
+        },
+        orderBy: { occurredAt: "desc" },
+        take: 5000,
+        select: { name: true, occurredAt: true, metadata: true },
+      }),
     ]);
+
+  const marketing = {
+    periodDays: 30,
+    pageViews: recentMarketingEvents.filter(e => e.name === "page_view").length,
+    signupStarted: recentMarketingEvents.filter(e => e.name === "signup_started").length,
+    leads: recentMarketingEvents.filter(e => e.name === "signup_completed").length,
+    instagramConnectStarted: recentMarketingEvents.filter(e => e.name === "instagram_connect_started").length,
+    instagramConnected: recentMarketingEvents.filter(e => e.name === "instagram_connected").length,
+    analysisStarted: recentMarketingEvents.filter(e => e.name === "analysis_started").length,
+    analysisCompleted: recentMarketingEvents.filter(e => e.name === "analysis_completed").length,
+    strategiesCreated: recentMarketingEvents.filter(e => e.name === "strategy_created").length,
+    checkoutStarted: recentMarketingEvents.filter(e => e.name === "checkout_started").length,
+    paymentsApproved: recentMarketingEvents.filter(e => e.name === "payment_approved").length,
+    subscriptionsStarted: recentMarketingEvents.filter(e => e.name === "subscription_started").length,
+    sources: Object.entries(
+      recentMarketingEvents.reduce((acc: Record<string, number>, e) => {
+        const m = (e.metadata && typeof e.metadata === "object") ? e.metadata as Record<string, unknown> : {};
+        const source = String(m.utm_source || m.source || "direto");
+        acc[source] = (acc[source] || 0) + 1;
+        return acc;
+      }, {})
+    ).sort((a,b) => b[1] - a[1]).slice(0, 10),
+  };
 
   return NextResponse.json({
     stats: {
-      users,
-      trialing,
-      active,
-      connected,
-      drafts,
-      payments,
+      users, trialing, active, connected, drafts, payments,
       revenue: (paidRevenue._sum.amountCents || 0) / 100,
       events,
     },
+    marketing,
     recentUsers,
     recentPayments,
   });
