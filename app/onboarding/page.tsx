@@ -10,6 +10,7 @@ export default function Onboarding() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -27,6 +28,7 @@ export default function Onboarding() {
         body: JSON.stringify({
           name,
           email,
+          phone,
           password,
           profileDescription: "Diagnóstico estratégico pendente.",
           desiredOutcome: "Definir após a criação da conta.",
@@ -38,7 +40,7 @@ export default function Onboarding() {
         return;
       }
       await trackEvent({ name: "signup_completed", occurredAt: new Date().toISOString() });
-      router.push("/setup");
+      router.push("/welcome");
     } catch {
       setError("Não foi possível conectar ao servidor.");
     } finally {
@@ -56,6 +58,7 @@ export default function Onboarding() {
 
     <div className="field"><label>Seu nome</label><input value={name} onChange={e=>setName(e.target.value)} placeholder="Como podemos chamar você?" /></div>
     <div className="field"><label>E-mail</label><input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="voce@email.com" /></div>
+    <div className="field"><label>Celular / WhatsApp</label><input type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="(21) 99999-9999" /></div>
     <div className="field"><label>Senha</label><input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Mínimo de 8 caracteres" /></div>
 
     {error && <p className="small" style={{color:"#fda4af",marginBottom:14}}>{error}</p>}
