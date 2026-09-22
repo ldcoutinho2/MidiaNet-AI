@@ -11,3 +11,4 @@
 .modalWrap{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(8px);z-index:100;overflow:auto;padding:28px 16px}
 .modal{width:min(900px,100%);margin:0 auto;background:#101014;border:1px solid var(--border);border-radius:22px;padding:22px;box-shadow:0 30px 100px #000}
 @media(max-width:800px){.grid2{grid-template-columns:1fr}.modal{padding:16px}}
+.checkRow{width:100%;display:flex;align-items:center;gap:9px;background:transparent;border:0;color:var(--text);text-align:left;padding:6px 0;cursor:pointer}.checkRow span{font-size:17px;color:#d8b4fe}
