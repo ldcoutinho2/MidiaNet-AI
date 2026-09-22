@@ -218,6 +218,23 @@ export async function POST() {
     }
 
     const aiProfile = JSON.parse(response.output_text);
+    const fixedSchedule = [
+      { format: "Story", time: "09:00" },
+      { format: "Foto", time: "12:30" },
+      { format: "Reel", time: "19:00" },
+      { format: "Carrossel", time: "21:00" }
+    ];
+    if (Array.isArray(aiProfile.weeklyPlan)) {
+      aiProfile.weeklyPlan = aiProfile.weeklyPlan.slice(0, 7).map((day: any) => {
+        const remaining = Array.isArray(day.slots) ? [...day.slots] : [];
+        const slots = fixedSchedule.map((target: any) => {
+          const index = remaining.findIndex((slot: any) => slot?.format === target.format);
+          const chosen = index >= 0 ? remaining.splice(index, 1)[0] : (remaining.shift() || {});
+          return { ...chosen, format: target.format, time: target.time };
+        });
+        return { ...day, slots };
+      });
+    }
     aiProfile.weeklyContentCount = Array.isArray(aiProfile.weeklyPlan)
       ? aiProfile.weeklyPlan.reduce(
           (total: number, day: { slots?: unknown[] }) =>
