@@ -23,6 +23,7 @@ model User {
   id                String            @id @default(cuid())
   name              String?
   email             String            @unique
+  phone             String?
   passwordHash      String?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
@@ -208,6 +209,11 @@ model Subscription {
   providerSubscriptionId String?            @unique
   status                SubscriptionStatus @default(INACTIVE)
   plan                  String?
+  trialEndsAt           DateTime?
+  trialContentLimit     Int                @default(28)
+  trialContentUsed      Int                @default(0)
+  trialImageLimit       Int                @default(4)
+  trialImageUsed        Int                @default(0)
   currentPeriodEnd      DateTime?
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
