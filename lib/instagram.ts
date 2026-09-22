@@ -1,132 +1,314 @@
 import { db } from "@/lib/db";
 
-const IG_GRAPH = "https://graph.instagram.com";
+const APIFY_BASE = "https://api.apify.com/v2/acts";
+const PROFILE_ACTOR = "apify~instagram-profile-scraper";
+const POSTS_ACTOR = "apify~instagram-scraper";
 
-type InstagramProfile = {
-  id?: string;
-  username?: string;
-  name?: string;
-  biography?: string;
-  website?: string;
-  profile_picture_url?: string;
-  followers_count?: number;
-  follows_count?: number;
-  media_count?: number;
+type AnyRecord = Record<string, any>;
+
+export type InstagramPost = {
+  id: string;
+  caption: string | null;
+  media_type: string | null;
+  media_url: string | null;
+  thumbnail_url: string | null;
+  permalink: string | null;
+  timestamp: string | null;
+  like_count: number | null;
+  comments_count: number | null;
 };
 
-type InstagramMedia = {
-  id?: string;
-  caption?: string;
-  media_type?: string;
-  media_url?: string;
-  thumbnail_url?: string;
-  permalink?: string;
-  timestamp?: string;
-  like_count?: number;
-  comments_count?: number;
+export type InstagramProfileResult = {
+  id: string;
+  username: string;
+  url: string;
+  fullName: string | null;
+  biography: string | null;
+  website: string | null;
+  profilePictureUrl: string | null;
+  followersCount: number | null;
+  followsCount: number | null;
+  mediaCount: number | null;
+  isBusinessAccount: boolean | null;
+  private: boolean | null;
+  verified: boolean | null;
+  highlightReelCount: number | null;
+  latestPosts: InstagramPost[];
+  raw: AnyRecord;
 };
 
-type InsightMetric = {
-  name?: string;
-  values?: Array<{ value?: number }>;
-};
+function getToken() {
+  const token = process.env.APIFY_TOKEN;
+  if (!token) throw new Error("APIFY_TOKEN não configurado no servidor.");
+  return token;
+}
 
-async function igGet(path: string, accessToken: string, params: Record<string, string> = {}) {
-  const url = new URL(IG_GRAPH + path);
-  Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
-  url.searchParams.set("access_token", accessToken);
-  const response = await fetch(url, { cache: "no-store" });
-  const data = await response.json().catch(() => ({}));
+function cleanUsername(value: string) {
+  return value
+    .trim()
+    .replace(/^https?:\\/\\/(www\\.)?instagram\\.com\\//i, "")
+    .replace(/^@/, "")
+    .split(/[/?#]/)[0]
+    .toLowerCase();
+}
+
+function asNumber(value: unknown) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function asString(value: unknown) {
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function firstString(...values: unknown[]) {
+  for (const value of values) {
+    const result = asString(value);
+    if (result) return result;
+  }
+  return null;
+}
+
+function firstNumber(...values: unknown[]) {
+  for (const value of values) {
+    const result = asNumber(value);
+    if (result !== null) return result;
+  }
+  return null;
+}
+
+function normalizePost(post: AnyRecord, index: number): InstagramPost {
+  const mediaUrl = firstString(
+    post.mediaUrl,
+    post.displayUrl,
+    post.imageUrl,
+    post.image_url,
+    post.videoUrl,
+    post.video_url,
+    post.url
+  );
+  const thumbnail = firstString(
+    post.thumbnailUrl,
+    post.thumbnail_url,
+    post.displayUrl,
+    post.imageUrl,
+    post.image_url
+  );
+  const id = firstString(post.id, post.pk, post.shortCode, post.shortcode, post.code) || `post-${index}`;
+  const timestamp = firstString(post.timestamp, post.takenAt, post.takenAtIso, post.date);
+
+  return {
+    id,
+    caption: firstString(post.caption, post.text),
+    media_type: firstString(post.mediaType, post.type, post.media_type),
+    media_url: mediaUrl,
+    thumbnail_url: thumbnail,
+    permalink: firstString(post.permalink, post.url, post.webUrl),
+    timestamp,
+    like_count: firstNumber(post.likeCount, post.likesCount, post.likes, post.like_count),
+    comments_count: firstNumber(post.commentsCount, post.comments, post.commentCount, post.comments_count),
+  };
+}
+
+function normalizeProfile(item: AnyRecord): InstagramProfileResult {
+  const username = firstString(item.username, item.userName, item.handle);
+  const id = firstString(item.id, item.userId, item.pk, item.fbid);
+  if (!username || !id) throw new Error("A API da Apify não retornou um perfil válido.");
+
+  const latest = Array.isArray(item.latestPosts)
+    ? item.latestPosts
+    : Array.isArray(item.posts)
+      ? item.posts
+      : [];
+
+  return {
+    id,
+    username: username.replace(/^@/, "").toLowerCase(),
+    url: firstString(item.url, item.inputUrl) || `https://www.instagram.com/${username}/`,
+    fullName: firstString(item.fullName, item.full_name, item.name),
+    biography: firstString(item.biography, item.bio),
+    website: firstString(item.externalUrl, item.website, item.external_url),
+    profilePictureUrl: firstString(item.profilePicUrlHD, item.profilePicUrl, item.profilePictureUrl),
+    followersCount: firstNumber(item.followersCount, item.followers, item.followerCount),
+    followsCount: firstNumber(item.followsCount, item.followingCount, item.following),
+    mediaCount: firstNumber(item.postsCount, item.mediaCount, item.postCount),
+    isBusinessAccount: typeof item.isBusinessAccount === "boolean" ? item.isBusinessAccount : null,
+    private: typeof item.private === "boolean" ? item.private : null,
+    verified: typeof item.verified === "boolean" ? item.verified : null,
+    highlightReelCount: firstNumber(item.highlightReelCount, item.highlightsCount),
+    latestPosts: latest.slice(0, 12).map((post, index) => normalizePost(post, index)),
+    raw: item,
+  };
+}
+
+async function runActor(actor: string, input: AnyRecord) {
+  const token = getToken();
+  const url = `${APIFY_BASE}/${actor}/run-sync-get-dataset-items?token=${encodeURIComponent(token)}`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+    cache: "no-store",
+  });
+
+  const text = await response.text();
+  let data: any = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = null;
+  }
+
   if (!response.ok) {
-    const message = typeof data?.error?.message === "string" ? data.error.message : "Instagram API request failed";
+    const message =
+      firstString(data?.error?.message, data?.message, data?.error, text) ||
+      `Apify respondeu com HTTP ${response.status}.`;
     throw new Error(message);
   }
-  return data;
-}
 
-function metricValue(data: { data?: InsightMetric[] }, name: string) {
-  const metric = data.data?.find((item) => item.name === name);
-  const value = metric?.values?.[0]?.value;
-  return typeof value === "number" ? value : null;
-}
-
-export async function syncInstagramAccount(socialAccountId: string, accessToken?: string) {
-  const account = await db.socialAccount.findUnique({ where: { id: socialAccountId } });
-  if (!account) throw new Error("Conta do Instagram não encontrada.");
-
-  const token = accessToken || account.accessToken;
-  if (!token) throw new Error("Token do Instagram não disponível.");
-
-  const profile = await igGet("/" + account.platformUserId, token, {
-    fields: "id,username,name,biography,website,profile_picture_url,followers_count,follows_count,media_count",
-  }) as InstagramProfile;
-
-  let media: InstagramMedia[] = [];
-  try {
-    const mediaData = await igGet("/" + account.platformUserId + "/media", token, {
-      fields: "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count",
-      limit: "12",
-    });
-    media = Array.isArray(mediaData?.data) ? mediaData.data : [];
-  } catch {
-    // Keep profile sync working if one media field is unavailable.
+  if (!Array.isArray(data)) {
+    throw new Error("A Apify não retornou uma lista de resultados.");
   }
 
-  let reach: number | null = null;
-  let views: number | null = null;
-  try {
-    const insights = await igGet("/" + account.platformUserId + "/insights", token, {
-      metric: "reach,views,accounts_engaged,total_interactions",
-      period: "day",
-    });
-    reach = metricValue(insights, "reach");
-    views = metricValue(insights, "views");
-  } catch {
-    // Insights can be unavailable until the permission/app review is ready.
+  return data as AnyRecord[];
+}
+
+export async function lookupInstagramProfile(usernameOrUrl: string) {
+  const username = cleanUsername(usernameOrUrl);
+  if (!/^[a-z0-9._]{1,30}$/.test(username)) {
+    throw new Error("Informe um @ do Instagram válido.");
   }
 
-  const followers = Number.isFinite(profile.followers_count) ? Number(profile.followers_count) : null;
-  const follows = Number.isFinite(profile.follows_count) ? Number(profile.follows_count) : null;
-  const mediaCount = Number.isFinite(profile.media_count) ? Number(profile.media_count) : null;
+  const results = await runActor(PROFILE_ACTOR, {
+    usernames: [username],
+    resultsLimit: 12,
+  });
 
-  await db.socialAccount.update({
-    where: { id: account.id },
-    data: {
-      username: profile.username || account.username,
-      fullName: profile.name ?? null,
-      biography: profile.biography ?? null,
-      website: profile.website ?? null,
-      profilePictureUrl: profile.profile_picture_url ?? null,
-      followersCount: followers,
-      followsCount: follows,
-      mediaCount,
-      mediaCache: media.slice(0, 12),
+  const item = results[0];
+  if (!item || item.error === "not_found") {
+    throw new Error("Não encontramos esse perfil no Instagram.");
+  }
+
+  return normalizeProfile(item);
+}
+
+async function scrapeRecentPosts(username: string) {
+  try {
+    const results = await runActor(POSTS_ACTOR, {
+      directUrls: [`https://www.instagram.com/${username}/`],
+      resultsType: "posts",
+      resultsLimit: 12,
+      addParentData: true,
+    });
+
+    return results.slice(0, 12).map((post, index) => normalizePost(post, index));
+  } catch {
+    return [];
+  }
+}
+
+async function saveProfile(userId: string, profile: InstagramProfileResult, posts: InstagramPost[]) {
+  const latestPosts = posts.length ? posts : profile.latestPosts;
+  const media = latestPosts.slice(0, 12);
+
+  const existing = await db.socialAccount.findUnique({
+    where: {
+      platform_platformUserId: {
+        platform: "INSTAGRAM",
+        platformUserId: profile.id,
+      },
+    },
+  });
+
+  if (existing && existing.userId !== userId) {
+    throw new Error("Esse Instagram já está conectado a outra conta.");
+  }
+
+  const account = await db.socialAccount.upsert({
+    where: {
+      platform_platformUserId: {
+        platform: "INSTAGRAM",
+        platformUserId: profile.id,
+      },
+    },
+    update: {
+      userId,
+      username: profile.username,
+      fullName: profile.fullName,
+      biography: profile.biography,
+      website: profile.website,
+      profilePictureUrl: profile.profilePictureUrl,
+      followersCount: profile.followersCount,
+      followsCount: profile.followsCount,
+      mediaCount: profile.mediaCount,
+      mediaCache: media,
       lastSyncedAt: new Date(),
-      accessToken: token,
+      accessToken: null,
+      tokenExpiresAt: null,
+    },
+    create: {
+      userId,
+      platform: "INSTAGRAM",
+      platformUserId: profile.id,
+      username: profile.username,
+      fullName: profile.fullName,
+      biography: profile.biography,
+      website: profile.website,
+      profilePictureUrl: profile.profilePictureUrl,
+      followersCount: profile.followersCount,
+      followsCount: profile.followsCount,
+      mediaCount: profile.mediaCount,
+      mediaCache: media,
+      lastSyncedAt: new Date(),
     },
   });
 
   await db.metricSnapshot.create({
     data: {
       socialAccountId: account.id,
-      followers,
-      reach,
-      views,
-      likes: media.length ? media.reduce((sum, item) => sum + (Number(item.like_count) || 0), 0) : null,
-      comments: media.length ? media.reduce((sum, item) => sum + (Number(item.comments_count) || 0), 0) : null,
+      followers: profile.followersCount,
+      likes: media.length
+        ? media.reduce((sum, item) => sum + (item.like_count || 0), 0)
+        : null,
+      comments: media.length
+        ? media.reduce((sum, item) => sum + (item.comments_count || 0), 0)
+        : null,
     },
   });
 
+  return account;
+}
+
+export async function connectInstagramAccount(userId: string, usernameOrUrl: string) {
+  const profile = await lookupInstagramProfile(usernameOrUrl);
+  const posts = await scrapeRecentPosts(profile.username);
+  const account = await saveProfile(userId, profile, posts);
+
   return {
-    username: profile.username || account.username,
-    followers,
-    follows,
-    mediaCount,
-    biography: profile.biography ?? null,
-    website: profile.website ?? null,
-    profilePictureUrl: profile.profile_picture_url ?? null,
+    account,
+    profile,
+    posts: posts.length ? posts : profile.latestPosts,
+  };
+}
+
+export async function syncInstagramAccount(socialAccountId: string) {
+  const account = await db.socialAccount.findUnique({ where: { id: socialAccountId } });
+  if (!account?.username) throw new Error("Conta do Instagram não encontrada.");
+
+  const profile = await lookupInstagramProfile(account.username);
+  const posts = await scrapeRecentPosts(profile.username);
+  const saved = await saveProfile(account.userId, profile, posts);
+
+  return {
+    username: profile.username,
+    followers: profile.followersCount,
+    follows: profile.followsCount,
+    mediaCount: profile.mediaCount,
+    biography: profile.biography,
+    website: profile.website,
+    profilePictureUrl: profile.profilePictureUrl,
     lastSyncedAt: new Date().toISOString(),
-    media,
-    insights: { reach, views },
+    media: posts.length ? posts : profile.latestPosts,
   };
 }
