@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 type Slot = { time:string; format:string; role:string; objective:string; title:string; topic:string; hook:string; script:string; caption:string; visualDirection:string; cta:string; executionSteps:string[] };
@@ -19,20 +19,20 @@ export default function Dashboard(){
  async function analyze(){setAnalyzing(true);setError("");try{const r=await fetch("/api/ai/analyze-profile",{method:"POST"});const x=await r.json();if(!r.ok){setError(x.error||"Não foi possível montar sua estratégia.");return}setData(d=>d?.user.strategicProfile?{...d,user:{...d.user,strategicProfile:{...d.user.strategicProfile,aiProfile:x.aiProfile,aiAnalyzedAt:x.aiAnalyzedAt}}}:d);await fetch("/api/content-drafts/sync",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({weeklyPlan:x.aiProfile.weeklyPlan})});setTab("home")}catch{setError("Não foi possível conectar à IA.")}finally{setAnalyzing(false)}}
  if(loading)return <main className="auth"><div className="authbox"><p className="muted">Carregando seu painel...</p></div></main>; if(!data)return null;
  const p=data.user.strategicProfile!; const raw=p.aiProfile; const ai=isCurrentStrategy(raw)?raw:null;
+ let panel: ReactNode;
+ if (!ai) panel = <SetupStrategy analyzing={analyzing} analyze={analyze} hasOldStrategy={Boolean(raw)} />;
+ else if (tab === "home") panel = <Home ai={ai} onWeek={()=>setTab("week")} />;
+ else if (tab === "strategy") panel = <Strategy ai={ai} />;
+ else if (tab === "week") panel = <Week ai={ai} />;
+ else if (tab === "create") panel = <Create />;
+ else if (tab === "results") panel = <Results profile={p} />;
+ else if (tab === "profile") panel = <ProfileView profile={p} router={router} />;
+ else panel = <Plans subscription={data.user.subscription} />;
  return <main className="page"><nav className="nav"><div className="logo">MidiaNet<span>AI</span></div><button className="muted" onClick={logout} style={{background:"none",border:0,cursor:"pointer"}}>Sair</button></nav><section className="section" style={{paddingTop:28}}>
   <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:8}}>{tabs.map(([id,label])=><button key={id} className={tab===id?"btn primary":"btn secondary"} onClick={()=>setTab(id)} style={{whiteSpace:"nowrap"}}>{label}</button>)}</div>
   <div style={{marginTop:24}}><div className="instagramStrip"><div className="igAvatar">◎</div><div style={{flex:1}}><strong>{data.user.socialAccounts?.[0]?.username ? "@"+data.user.socialAccounts[0].username : p.instagramProfileUrl || "Seu Instagram"}</strong><div className="small muted">{data.user.socialAccounts?.length ? "Conta conectada · métricas disponíveis quando sincronizadas" : "Conta ainda não conectada · você pode usar o MidiaNet AI sem conectar"}</div></div><div className="badge">{data.user.subscription?.status==="TRIALING"?"🧪 Teste ativo":"✓ Plano ativo"}</div></div><div style={{marginTop:24}}><div className="badge">Seu estrategista</div><h1 style={{fontSize:40,letterSpacing:-2,margin:"14px 0 8px"}}>Olá, {data.user.name||"criador"}.</h1><p className="muted">Você não precisa descobrir o que postar. O MidiaNet AI organiza o próximo passo.</p></div>
   {error&&<p className="small" style={{color:"#fda4af",marginTop:14}}>{error}</p>}
-  {(() => {
-    if (!ai) return <SetupStrategy analyzing={analyzing} analyze={analyze} hasOldStrategy={Boolean(raw)} />;
-    if (tab === "home") return <Home ai={ai} onWeek={()=>setTab("week")} />;
-    if (tab === "strategy") return <Strategy ai={ai} />;
-    if (tab === "week") return <Week ai={ai} />;
-    if (tab === "create") return <Create />;
-    if (tab === "results") return <Results profile={p} />;
-    if (tab === "profile") return <ProfileView profile={p} router={router} />;
-    return <Plans subscription={data.user.subscription} />;
-  })()}
+  {panel}
  </section></main>;
 }
 function isCurrentStrategy(v:any):v is AIProfile{return Boolean(v&&typeof v==="object"&&typeof v.objective==="string"&&Array.isArray(v.weeklyPlan)&&(v.weeklyPlan.length===2||v.weeklyPlan.length===7)&&v.weeklyPlan.every((d:any)=>d&&Array.isArray(d.slots)&&d.slots.length===4))}
