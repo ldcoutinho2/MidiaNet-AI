@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { syncInstagramAccount } from "@/lib/instagram";
 
 const COOKIE_STATE = "midianet_instagram_oauth_state";
 const COOKIE_USERNAME = "midianet_instagram_requested_username";
@@ -133,7 +134,7 @@ export async function GET(req: Request) {
       ? new Date(Date.now() + expiresIn * 1000)
       : null;
 
-    await db.socialAccount.upsert({
+    const socialAccount = await db.socialAccount.upsert({
       where: {
         platform_platformUserId: {
           platform: "INSTAGRAM",
@@ -156,7 +157,11 @@ export async function GET(req: Request) {
       },
     });
 
-    return NextResponse.redirect(new URL("/dashboard?instagram=connected", req.url));
+    // OAuth establishes the account identity; immediately pull the profile,
+    // recent media and available insights for the first dashboard view.
+    await syncInstagramAccount(socialAccount.id, accessToken);
+
+    return NextResponse.redirect(new URL("/dashboard?instagram=connected&synced=1", req.url));
   } catch {
     return redirectToConnect(req, "connection_failed");
   }
