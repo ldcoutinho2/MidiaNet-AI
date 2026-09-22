@@ -32,6 +32,7 @@ export default function Dashboard(){
   <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:8}}>{tabs.map(([id,label])=><button key={id} className={tab===id?"btn primary":"btn secondary"} onClick={()=>setTab(id)} style={{whiteSpace:"nowrap"}}>{label}</button>)}</div>
   <div style={{marginTop:24}}><div className="instagramStrip"><div className="igAvatar">◎</div><div style={{flex:1}}><strong>{data.user.socialAccounts?.[0]?.username ? "@"+data.user.socialAccounts[0].username : p.instagramProfileUrl || "Seu Instagram"}</strong><div className="small muted">{data.user.socialAccounts?.length ? "Conta conectada · métricas disponíveis quando sincronizadas" : "Conta ainda não conectada · você pode usar o MidiaNet AI sem conectar"}</div></div><div className="badge">{data.user.subscription?.status==="TRIALING"?"🧪 Teste ativo":"✓ Plano ativo"}</div></div><div style={{marginTop:24}}><div className="badge">Seu estrategista</div><h1 style={{fontSize:40,letterSpacing:-2,margin:"14px 0 8px"}}>Olá, {data.user.name||"criador"}.</h1><p className="muted">Você não precisa descobrir o que postar. O MidiaNet AI organiza o próximo passo.</p></div>
   {error&&<p className="small" style={{color:"#fda4af",marginTop:14}}>{error}</p>}
+  </div>
   {panel}
  </section></main>;
 }
