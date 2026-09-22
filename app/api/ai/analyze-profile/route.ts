@@ -1,3 +1,4 @@
+// MidiaNet AI profile analysis route
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
