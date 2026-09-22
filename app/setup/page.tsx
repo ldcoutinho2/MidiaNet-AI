@@ -110,14 +110,14 @@ export default function SetupPage(){
     <Field label="Alguma coisa que você não quer fazer?" value={form.contentAvoid} onChange={(v:string)=>set("contentAvoid",v)} placeholder="Ex.: não quero aparecer em vídeo." optional/>
    </>}
 
-   {step===4&&<>
+   {step===3&&<>
     <h2>Tem algo que você quer que a IA saiba?</h2>
     <p className="muted" style={{marginTop:8,lineHeight:1.6}}>Essa é a parte mais importante para contar o que as perguntas não captaram. Fale livremente sobre seu perfil, o que está te incomodando, o que já tentou, o que você quer mudar e onde quer chegar.</p>
     <Field label="Fale livremente sobre seu perfil" value={form.freeContext} onChange={(v:string)=>set("freeContext",v)} placeholder="Ex.: sinto que meu perfil está parado, não gosto da aparência da grade, não sei o que postar, quero parecer mais profissional e começar a gerar clientes pelo Instagram..." textarea/>
     <p className="small muted" style={{marginTop:8}}>Opcional. Quanto mais contexto fizer sentido para você, mais personalizada pode ser a análise.</p>
    </>}
 
-   {step===3&&<>
+   {step===4&&<>
     <h2>Está tudo certo?</h2><p className="muted">A IA vai usar essas respostas, seu Instagram público quando disponível e os resultados do perfil para montar a estratégia.</p>
     <div className="feature" style={{marginTop:18}}>
       <strong>@{form.instagramProfileUrl.replace(/^.*instagram\.com\//,"").replace(/^@/,"").replace(/\/$/,"")}</strong>
