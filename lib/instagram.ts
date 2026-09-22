@@ -46,7 +46,7 @@ function getToken() {
 function cleanUsername(value: string) {
   return value
     .trim()
-    .replace(/^https?:\\/\\/(www\\.)?instagram\\.com\\//i, "")
+    .replace(/^https?:\/\/(www\.)?instagram\.com\//i, "")
     .replace(/^@/, "")
     .split(/[/?#]/)[0]
     .toLowerCase();
