@@ -129,6 +129,24 @@ model MetricSnapshot {
   @@index([socialAccountId, capturedAt])
 }
 
+model BusinessMetricSnapshot {
+  id                    String   @id @default(cuid())
+  userId                String
+  capturedAt            DateTime @default(now())
+  instagramDms          Int      @default(0)
+  instagramLeads        Int      @default(0)
+  instagramSales        Int      @default(0)
+  whatsappConversations Int      @default(0)
+  whatsappLeads         Int      @default(0)
+  whatsappSales         Int      @default(0)
+  salesCount            Int      @default(0)
+  revenue               Float    @default(0)
+  notes                 String?
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, capturedAt])
+}
+
 enum ContentDraftStatus {
   IDEA
   DRAFT
