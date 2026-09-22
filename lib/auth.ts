@@ -48,7 +48,7 @@ export async function getCurrentUser() {
 
   const session = await db.session.findUnique({
     where: { tokenHash: hashToken(token) },
-    include: { user: { include: { strategicProfile: true, socialAccounts: true } } },
+    include: { user: { include: { strategicProfile: true, socialAccounts: true, subscription: true } } },
   });
 
   if (!session) return null;
