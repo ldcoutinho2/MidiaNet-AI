@@ -25,12 +25,14 @@ export async function POST(request: Request) {
     const plan = PLANS[key];
     const name = String(body.name || "").trim();
     const email = String(body.email || "").trim().toLowerCase();
-    const cpf = digits(body.cpf);
+    const whatsapp = digits(body.whatsapp);
 
     if (!plan) return NextResponse.json({ error: "Plano inválido." }, { status: 400 });
     if (!name) return NextResponse.json({ error: "Informe seu nome." }, { status: 400 });
     if (!/^([^\\s@]+)@([^\\s@]+)\\.([^\\s@]+)$/.test(email)) return NextResponse.json({ error: "Informe um e-mail válido." }, { status: 400 });
-    if (cpf.length !== 11) return NextResponse.json({ error: "Informe um CPF válido." }, { status: 400 });
+    if (whatsapp.length < 10 || whatsapp.length > 13) return NextResponse.json({ error: "Informe um WhatsApp válido." }, { status: 400 });
+
+    await db.user.update({ where: { id: user.id }, data: { name, phone: whatsapp } });
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
     const externalReference = `midianet:${user.id}:${key}:${randomUUID()}`;
@@ -51,7 +53,6 @@ export async function POST(request: Request) {
           email,
           first_name: name.split(" ")[0],
           last_name: name.split(" ").slice(1).join(" ") || undefined,
-          identification: { type: "CPF", number: cpf },
         },
         external_reference: externalReference,
         notification_url: notificationUrl,
