@@ -16,6 +16,7 @@ Conectar Instagram → analisar perfil → entender objetivo do cliente → perg
 - DNA do perfil
 - Dashboard
 - Estratégia semanal
+- Evolução e métricas de conversão
 - Eventos e funil
 - Assinaturas e pagamentos
 
@@ -30,4 +31,4 @@ Conectar Instagram → analisar perfil → entender objetivo do cliente → perg
 
 ## Deployment
 
-- Commit de teste para validar uma nova implantação na Vercel.
+- Commit de validação do fluxo de evolução e métricas.
