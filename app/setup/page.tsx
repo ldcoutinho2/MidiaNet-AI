@@ -63,7 +63,7 @@ export default function SetupPage(){
  return <main className="auth"><div className="authbox" style={{width:"min(820px,100%)"}}>
    <div style={{display:"flex",justifyContent:"space-between",gap:20,alignItems:"center"}}>
     <div><div className="logo">MidiaNet<span>AI</span></div><h1 style={{marginBottom:8}}>Vamos direto ao ponto.</h1>
-    <p className="muted">São só 4 etapas. Responda o essencial e a IA organiza o restante.</p></div><strong>{step+1}/{steps.length}</strong>
+    <p className="muted">São só 5 etapas rápidas. Responda o essencial e, se quiser, explique livremente o que você quer melhorar.</p></div><strong>{step+1}/{steps.length}</strong>
    </div>
    <div style={{height:8,background:"#27272a",borderRadius:99,margin:"24px 0"}}><div style={{height:"100%",width:((step+1)/steps.length*100)+"%",background:"linear-gradient(90deg,#a855f7,#ec4899)",borderRadius:99}}/></div>
    <div className="badge">{steps[step]}</div>
