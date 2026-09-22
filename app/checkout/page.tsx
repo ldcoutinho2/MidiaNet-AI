@@ -12,12 +12,12 @@ function onlyDigits(value: string) {
   return value.replace(/\\D/g, "");
 }
 
-function formatCpf(value: string) {
-  const digits = onlyDigits(value).slice(0, 11);
-  return digits
-    .replace(/(\\d{3})(\\d)/, "$1.$2")
-    .replace(/(\\d{3})(\\d)/, "$1.$2")
-    .replace(/(\\d{3})(\\d{1,2})$/, "$1-$2");
+function formatWhatsapp(value: string) {
+  const digits = onlyDigits(value).slice(0, 13);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 7) return `(${digits.slice(0,2)}) ${digits.slice(2)}`;
+  if (digits.length <= 11) return `(${digits.slice(0,2)}) ${digits.slice(2,7)}-${digits.slice(7)}`;
+  return `+${digits.slice(0,2)} (${digits.slice(2,4)}) ${digits.slice(4,9)}-${digits.slice(9)}`;
 }
 
 export default function CheckoutPage() {
@@ -27,7 +27,7 @@ export default function CheckoutPage() {
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [cpf, setCpf] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
   const [loading, setLoading] = useState(false);
   const [payment, setPayment] = useState<any>(null);
   const [error, setError] = useState("");
@@ -49,6 +49,7 @@ export default function CheckoutPage() {
         if (!data?.user) return;
         setName(data.user.name || "");
         setEmail(data.user.email || "");
+        setWhatsapp(data.user.phone || "");
       })
       .catch(() => setError("Não foi possível carregar seus dados."));
   }, [router]);
@@ -63,17 +64,17 @@ export default function CheckoutPage() {
     setPayment(null);
     setConfirmed(false);
 
-    const cleanCpf = onlyDigits(cpf);
+    const cleanWhatsapp = onlyDigits(whatsapp);
     if (!name.trim()) return setError("Informe seu nome.");
     if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email.trim())) return setError("Informe um e-mail válido.");
-    if (cleanCpf.length !== 11) return setError("Informe um CPF válido.");
+    if (cleanWhatsapp.length < 10 || cleanWhatsapp.length > 13) return setError("Informe um WhatsApp válido.");
 
     setLoading(true);
     try {
       const response = await fetch("/api/payments/mercadopago/pix", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: planKey, name: name.trim(), email: email.trim(), cpf: cleanCpf }),
+        body: JSON.stringify({ plan: planKey, name: name.trim(), email: email.trim(), whatsapp: cleanWhatsapp }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -172,13 +173,13 @@ export default function CheckoutPage() {
                 <div style={{ display: "grid", gap: 12, marginTop: 18 }}>
                   <label className="metricInput"><span>Nome completo</span><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome"/></label>
                   <label className="metricInput"><span>E-mail</span><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@email.com"/></label>
-                  <label className="metricInput"><span>CPF</span><input inputMode="numeric" value={formatCpf(cpf)} onChange={(e) => setCpf(e.target.value)} placeholder="000.000.000-00"/></label>
+                  <label className="metricInput"><span>WhatsApp</span><input inputMode="tel" value={formatWhatsapp(whatsapp)} onChange={(e) => setWhatsapp(e.target.value)} placeholder="(21) 99999-9999"/></label>
                 </div>
                 <button className="btn primary" style={{ width: "100%", marginTop: 18 }} onClick={generatePix} disabled={loading}>
                   {loading ? "Gerando Pix..." : `Gerar Pix de ${formattedPrice} →`}
                 </button>
                 {error && <p className="small" style={{ color: "#fda4af", marginTop: 12 }}>{error}</p>}
-                <p className="small muted" style={{ marginTop: 14, lineHeight: 1.5 }}>Seus dados são usados para criar a cobrança. Não armazenamos dados de cartão porque este checkout está configurado para Pix.</p>
+                <p className="small muted" style={{ marginTop: 14, lineHeight: 1.5 }}>Usamos seu nome, e-mail e WhatsApp para identificar sua conta e enviar informações sobre o acesso. Não armazenamos dados de cartão porque este checkout está configurado para Pix.</p>
               </>
             ) : (
               <>
