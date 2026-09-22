@@ -29,6 +29,20 @@ type Profile = {
   }>;
 };
 
+function normalizeUsername(input: string) {
+  let value = input.trim();
+  if (value.startsWith("http://") || value.startsWith("https://")) {
+    try {
+      const url = new URL(value);
+      const parts = url.pathname.split("/").filter(Boolean);
+      value = parts[0] || "";
+    } catch {
+      value = "";
+    }
+  }
+  return value.replace(/^@/, "").split(/[/?#]/)[0];
+}
+
 function formatNumber(value: number | null) {
   return typeof value === "number" ? value.toLocaleString("pt-BR") : "—";
 }
@@ -62,10 +76,8 @@ export default function ConnectInstagram() {
   async function searchProfile() {
     setMessage("");
     setProfile(null);
-    const value = handle.trim()
-      .replace(/^https?:\\/\\/(www\\.)?instagram\\.com\\//i, "")
-      .replace(/^@/, "")
-      .split(/[/?#]/)[0];
+
+    const value = normalizeUsername(handle);
 
     if (!value || !/^[a-zA-Z0-9._]{1,30}$/.test(value)) {
       setMessage("Digite um @ do Instagram válido ou cole o link do perfil.");
