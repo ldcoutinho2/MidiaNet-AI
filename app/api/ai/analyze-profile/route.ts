@@ -26,6 +26,31 @@ const schema = {
     tone: { type: "array", items: { type: "string" } },
     strengths: { type: "array", items: { type: "string" } },
     opportunities: { type: "array", items: { type: "string" } },
+    profileAudit: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        overallScore: { type: "integer" },
+        summary: { type: "string" },
+        firstImpression: { type: "string" },
+        bio: {
+          type: "object", additionalProperties: false,
+          properties: {
+            diagnosis: { type: "string" }, impact: { type: "string" }, recommendation: { type: "string" },
+            suggestedBio: { type: "string" }
+          },
+          required: ["diagnosis","impact","recommendation","suggestedBio"]
+        },
+        profilePhoto: { type: "object", additionalProperties: false, properties: { diagnosis:{type:"string"}, recommendation:{type:"string"} }, required:["diagnosis","recommendation"] },
+        nameAndPositioning: { type: "object", additionalProperties: false, properties: { diagnosis:{type:"string"}, recommendation:{type:"string"} }, required:["diagnosis","recommendation"] },
+        highlights: { type: "object", additionalProperties: false, properties: { diagnosis:{type:"string"}, recommendation:{type:"string"} }, required:["diagnosis","recommendation"] },
+        grid: { type: "object", additionalProperties: false, properties: { diagnosis:{type:"string"}, recommendation:{type:"string"} }, required:["diagnosis","recommendation"] },
+        conversion: { type: "object", additionalProperties: false, properties: { diagnosis:{type:"string"}, recommendation:{type:"string"}, ctaSuggestion:{type:"string"} }, required:["diagnosis","recommendation","ctaSuggestion"] },
+        priorities: { type: "array", minItems:3, maxItems:5, items:{type:"string"} },
+        limitations: { type:"array", items:{type:"string"} }
+      },
+      required: ["overallScore","summary","firstImpression","bio","profilePhoto","nameAndPositioning","highlights","grid","conversion","priorities","limitations"]
+    },
     thirtyDayPlan: {
       type: "array",
       items: {
@@ -82,7 +107,7 @@ const schema = {
   required: [
     "objective","currentStage","diagnosis","mainProblem","strategy","weeklyMission","nextAction",
     "postingFrequency","postingFrequencyReason","weeklyContentCount","dailyContentCount","positioning","audience","conversionStrategy",
-    "contentPillars","tone","strengths","opportunities","thirtyDayPlan","weeklyPlan"
+    "contentPillars","tone","strengths","opportunities","profileAudit","thirtyDayPlan","weeklyPlan"
   ]
 } as const;
 
@@ -140,6 +165,8 @@ export async function POST() {
         "Para cada conteúdo entregue horário sugerido, formato, função, objetivo, título, tema, gancho, roteiro completo, legenda pronta, direção visual, CTA e passos de execução.",
         "Para Reels, escreva cena a cena quando possível. Se o cliente não aparecer, use tela, B-roll, demonstração, texto ou voz em off.",
         "Os horários são hipóteses iniciais. Nunca diga que são horários de maior audiência sem métricas reais.",
+        "Antes da estratégia, faça uma auditoria prática do perfil atual. Avalie primeira impressão, nome, bio, foto de perfil, destaques, grade, posicionamento e conversão. Dê recomendações concretas e uma sugestão de bio pronta. Não invente elementos visuais ou informações que você não conseguiu observar. Se a fonte pública não permitir avaliar foto, capas ou grade com segurança, diga isso em limitations e trate a recomendação como hipótese a validar.",
+        "A auditoria deve separar diagnóstico, impacto e ação. Não use uma nota como verdade objetiva: overallScore é apenas uma referência interna de 0 a 100 baseada nas informações disponíveis. Não prometa aumento de seguidores, alcance ou vendas.",
         "A estratégia deve responder claramente: onde o perfil está, onde precisa chegar, qual é o principal problema, o que vamos fazer e o que a pessoa deve fazer agora.",
         "Não invente métricas, depoimentos, resultados, clientes, preços, características da oferta ou fatos sobre o Instagram.",
         "Se faltar uma informação essencial, use uma hipótese conservadora e deixe isso refletido na estratégia.",
