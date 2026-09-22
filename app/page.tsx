@@ -2,14 +2,11 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { useSearchParams } from "next/navigation";
 import { trackEvent } from "@/lib/events";
 
 function SalesLanding() {
-  const searchParams = useSearchParams();
-
   useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(window.location.search);
     const metadata: Record<string,string> = { path: "/", landing: "sales" };
     ["utm_source","utm_medium","utm_campaign","utm_content","utm_term"].forEach((key) => {
       const value = params.get(key);
@@ -24,7 +21,7 @@ function SalesLanding() {
       }
     });
     trackEvent({ name: "page_view", occurredAt: new Date().toISOString(), metadata });
-  }, [searchParams]);
+  }, []);
 
   function startSignup() {
     const metadata: Record<string,string> = { path: "/", cta: "hero_trial" };
