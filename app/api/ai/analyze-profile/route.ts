@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { openai } from "@/lib/openai";
+import { consumeContentGeneration, getEntitlement } from "@/lib/entitlements";
 
 const schema = {
   type: "object",
@@ -115,6 +116,10 @@ export async function POST() {
   }
 
   try {
+    const entitlement = await getEntitlement(user.id);
+    if (!entitlement.active) return NextResponse.json({ error: "Seu teste terminou. Escolha um plano para continuar." }, { status: 402 });
+    const consumption = await consumeContentGeneration(user.id);
+    if (!consumption.ok) return NextResponse.json({ error: consumption.error }, { status: 402 });
     const instagramReference = profile.instagramProfileUrl
       ? normalizeInstagramReference(profile.instagramProfileUrl)
       : "";
@@ -234,6 +239,9 @@ export async function POST() {
         });
         return { ...day, slots };
       });
+    }
+    if (entitlement.trialActive) {
+      aiProfile.weeklyPlan = Array.isArray(aiProfile.weeklyPlan) ? aiProfile.weeklyPlan.slice(0, 2) : [];
     }
     aiProfile.weeklyContentCount = Array.isArray(aiProfile.weeklyPlan)
       ? aiProfile.weeklyPlan.reduce(
