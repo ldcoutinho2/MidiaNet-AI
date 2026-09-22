@@ -70,7 +70,59 @@ function ContentWorkspace({slot:initialSlot,day,onClose}:{slot:Slot;day:string;o
  return <div className="modalWrap"><div className="modal"><div className="row-between"><div><div className="badge">{fmtIcon[slot.format]||"✨"} {day} · {slot.time}</div><h2 style={{marginTop:10}}>{slot.title}</h2><p className="muted" style={{marginTop:5}}>{slot.role} · {slot.objective}</p></div><button className="btn secondary" onClick={onClose}>Fechar</button></div><div className="grid2" style={{marginTop:16}}><Detail title="🎯 Objetivo" text={slot.objective}/><Detail title="💡 Ideia/Tema" text={slot.topic}/></div><Detail title="🪝 Gancho" text={slot.hook}/><Detail title={slot.format==="Carrossel"?"📚 Estrutura do carrossel":"🎬 Roteiro"} text={slot.script}/><Detail title="✍️ Legenda pronta" text={slot.caption}/><Detail title="🎥 Como produzir" text={slot.visualDirection}/><Detail title="📣 CTA" text={slot.cta}/>{slot.executionSteps?.length>0&&<div className="card" style={{marginTop:12}}><strong>✅ Checklist</strong>{slot.executionSteps.map((x,i)=><button key={i} onClick={()=>setChecked(v=>v.includes(i)?v.filter(n=>n!==i):[...v,i])} className="checkRow"><span>{checked.includes(i)?"☑":"☐"}</span>{x}</button>)}</div>}{(slot.format==="Foto"||slot.format==="Carrossel")&&<div className="card" style={{marginTop:12}}><strong>✨ Criar com IA</strong><p className="small muted" style={{marginTop:6}}>Você pode produzir sozinho seguindo a orientação acima ou pedir uma referência visual para começar.</p><button className="btn primary" style={{marginTop:10}} onClick={generateImage} disabled={imageBusy}>{imageBusy?"Gerando imagem...":"Gerar imagem com IA"}</button>{image&&<img src={image} alt="Imagem gerada" style={{width:"100%",borderRadius:14,marginTop:12}}/>}</div>}<div className="card" style={{marginTop:12}}><strong>💬 O que você quer melhorar?</strong><div className="row" style={{gap:6,flexWrap:"wrap",margin:"10px 0"}}>{["Deixar mais natural","Mais chamativo","Mais focado em vendas","Quero outra ideia","Tenho outra visão"].map(x=><button key={x} className="pill" onClick={()=>refine(x)}>{x}</button>)}</div><textarea value={instruction} onChange={e=>setInstruction(e.target.value)} placeholder="Ex.: gostei, mas quero trocar o assunto e falar sobre..."/><button className="btn primary" style={{marginTop:10}} onClick={()=>refine()} disabled={busy}>{busy?"Ajustando...":"Melhorar com a IA"}</button></div><div className="row" style={{justifyContent:"flex-end",marginTop:14}}><button className="btn secondary" onClick={()=>setSaved(true)}>{saved?"✓ Salvo como aprovado":"Aprovar conteúdo"}</button></div></div></div>}
 function Detail({title,text}:{title:string;text:string}){return <div className="card" style={{marginTop:12}}><strong>{title}</strong><p style={{marginTop:7,whiteSpace:"pre-line",lineHeight:1.55}}>{text||"—"}</p></div>}
 function Create(){const [idea,setIdea]=useState("");const [loading,setLoading]=useState(false);const [options,setOptions]=useState<any[]>([]);const [error,setError]=useState("");async function multiply(){if(!idea.trim())return;setLoading(true);setError("");try{const r=await fetch("/api/ai/multiply-idea",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({idea})});const x=await r.json();if(!r.ok){setError(x.error||"Não foi possível multiplicar a ideia.");return}setOptions(x.options||[])}catch{setError("Não foi possível conectar à IA.")}finally{setLoading(false)}}return <div style={{marginTop:22}}><div className="feature"><div className="badge">✨ Criar</div><h2 style={{marginTop:12}}>Você traz a ideia. A IA encontra os caminhos.</h2><p className="muted" style={{marginTop:7}}>Escreva uma ideia do jeito que vier à cabeça. Não precisa criar prompt.</p><textarea value={idea} onChange={e=>setIdea(e.target.value)} placeholder="Ex.: quero falar sobre os erros que pequenos negócios cometem no Instagram..." style={{marginTop:16,minHeight:120}}/><button className="btn primary" style={{marginTop:12}} onClick={multiply} disabled={loading}>{loading?"Encontrando caminhos...":"🚀 Multiplicar minha ideia"}</button>{error&&<p className="small" style={{color:"#fda4af",marginTop:10}}>{error}</p>}</div>{options.length>0&&<div style={{marginTop:18}}><h2>5 formas de transformar essa ideia</h2><p className="muted" style={{marginTop:6}}>Escolha um caminho, depois refine com a IA até ficar com a sua cara.</p><div style={{display:"grid",gap:12,marginTop:14}}>{options.map((o,i)=><div className="card" key={i}><div className="row-between"><div><span className="badge">{i+1} · {o.format}</span><h3 style={{marginTop:9}}>{o.title}</h3></div><span className="small muted">{o.angle}</span></div><p style={{marginTop:9}}><strong>🪝 {o.hook}</strong></p><p className="small muted" style={{marginTop:7}}>{o.objective}</p><button className="btn secondary" style={{marginTop:10}} onClick={()=>{setIdea(o.title+" — "+o.hook);setOptions([])}}>Usar esta ideia</button></div>)}</div></div>}</div>}
-function Plans({subscription}:{subscription:any}){const end=subscription?.trialEndsAt?new Date(subscription.trialEndsAt):null;const days=end?Math.max(0,Math.ceil((end.getTime()-Date.now())/86400000)):0;return <div style={{marginTop:22}}><div className="feature"><div className="badge">💳 Seu acesso</div><h2 style={{marginTop:12}}>{subscription?.status==="TRIALING"?"Teste gratuito ativo":"Plano MidiaNet AI"}</h2><p className="muted" style={{marginTop:7}}>{subscription?.status==="TRIALING"?`Você tem ${days} dia(s) restante(s) no teste.`:"Seu plano atual aparece aqui."}</p><div className="grid3" style={{marginTop:16}}><div className="card"><small>TESTE</small><strong>2 dias</strong><p className="small muted">8 conteúdos + 2 imagens</p></div><div className="card"><small>MENSAL</small><strong>Completo</strong><p className="small muted">Estratégia, criação e evolução.</p><button className="btn primary" style={{marginTop:10}} onClick={()=>alert("Checkout mensal será conectado ao seu provedor de pagamento.")}>Escolher mensal</button></div><div className="card"><small>ANUAL</small><strong>Completo</strong><p className="small muted">Estratégia, criação e evolução.</p><button className="btn primary" style={{marginTop:10}} onClick={()=>alert("Checkout anual será conectado ao seu provedor de pagamento.")}>Escolher anual</button></div></div></div></div>}
+function Plans({subscription}:{subscription:any}) {
+ const [loading,setLoading]=useState<string|null>(null);
+ const [payment,setPayment]=useState<any>(null);
+ const [error,setError]=useState("");
+ const [copied,setCopied]=useState(false);
+ async function checkout(plan:"weekly"|"monthly"){
+   setLoading(plan); setError(""); setPayment(null);
+   try{
+     const r=await fetch("/api/payments/pushinpay/create",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({plan})});
+     const x=await r.json();
+     if(!r.ok){setError(x.error||"Não foi possível gerar o PIX.");return;}
+     setPayment(x);
+   }catch{setError("Não foi possível conectar ao pagamento.");}
+   finally{setLoading(null);}
+ }
+ async function copyPix(){
+   if(!payment?.qrCode)return;
+   await navigator.clipboard.writeText(payment.qrCode);
+   setCopied(true); setTimeout(()=>setCopied(false),1800);
+ }
+ const end=subscription?.currentPeriodEnd?new Date(subscription.currentPeriodEnd):null;
+ const trialEnd=subscription?.trialEndsAt?new Date(subscription.trialEndsAt):null;
+ const days=trialEnd?Math.max(0,Math.ceil((trialEnd.getTime()-Date.now())/86400000)):0;
+ return <div style={{marginTop:22}}>
+  <div className="feature">
+   <div className="badge">💳 Seu acesso</div>
+   <h2 style={{marginTop:12}}>{subscription?.status==="TRIALING"?"Teste gratuito ativo":"Planos MidiaNet AI"}</h2>
+   <p className="muted" style={{marginTop:7}}>{subscription?.status==="TRIALING"?`Você tem ${days} dia(s) restante(s) no teste.`:end?`Plano ${subscription?.plan||""} ativo até ${end.toLocaleDateString("pt-BR")}.`:"Escolha um plano para continuar usando o MidiaNet AI."}</p>
+   <div className="grid2" style={{marginTop:18}}>
+    <div className="card">
+      <div className="badge">SEMANAL</div><h2 style={{marginTop:8}}>R$ 14,99</h2>
+      <p className="small muted" style={{marginTop:6}}>7 dias de acesso completo.</p>
+      <p className="small" style={{marginTop:10}}>✓ Estratégia com IA<br/>✓ Auditoria do Instagram<br/>✓ Conteúdos e ajustes com IA<br/>✓ Evolução e métricas</p>
+      <button className="btn primary" style={{marginTop:14,width:"100%"}} onClick={()=>checkout("weekly")} disabled={!!loading}>{loading==="weekly"?"Gerando PIX...":"Pagar R$ 14,99"}</button>
+    </div>
+    <div className="card">
+      <div className="badge">MENSAL</div><h2 style={{marginTop:8}}>R$ 29,99</h2>
+      <p className="small muted" style={{marginTop:6}}>30 dias de acesso completo.</p>
+      <p className="small" style={{marginTop:10}}>✓ Estratégia com IA<br/>✓ Auditoria do Instagram<br/>✓ Conteúdos e ajustes com IA<br/>✓ Evolução e métricas</p>
+      <button className="btn primary" style={{marginTop:14,width:"100%"}} onClick={()=>checkout("monthly")} disabled={!!loading}>{loading==="monthly"?"Gerando PIX...":"Pagar R$ 29,99"}</button>
+    </div>
+   </div>
+   {error&&<p className="small" style={{color:"#fda4af",marginTop:14}}>{error}</p>}
+  </div>
+  {payment&&<div className="feature" style={{marginTop:18,textAlign:"center"}}>
+    <div className="badge">PIX gerado</div>
+    <h2 style={{marginTop:10}}>Finalize seu pagamento</h2>
+    <p className="muted" style={{marginTop:7}}>Assim que o pagamento for confirmado, seu plano será ativado automaticamente.</p>
+    {payment.qrCodeBase64&&<img src={payment.qrCodeBase64.startsWith("data:")?payment.qrCodeBase64:`data:image/png;base64,${payment.qrCodeBase64}`} alt="QR Code PIX" style={{width:220,height:220,objectFit:"contain",margin:"18px auto",background:"#fff",padding:10,borderRadius:12}}/>}
+    {payment.qrCode&&<><textarea readOnly value={payment.qrCode} style={{minHeight:90,marginTop:8}}/><button className="btn secondary" style={{marginTop:10}} onClick={copyPix}>{copied?"✓ Copiado":"📋 Copiar PIX"}</button></>}
+  </div>}
+ </div>;
+}
 function Results({profile}:{profile:Profile}){
  const [data,setData]=useState<any>(null); const [business,setBusiness]=useState<any>(null);
  const [form,setForm]=useState({instagramDms:"",instagramLeads:"",instagramSales:"",whatsappConversations:"",whatsappLeads:"",whatsappSales:"",salesCount:"",revenue:""});
