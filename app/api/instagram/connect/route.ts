@@ -6,16 +6,24 @@ export async function GET() {
 
   if (!appId || !redirectUri) {
     return NextResponse.json(
-      { ok: false, error: "Instagram connection is not configured yet." },
+      {
+        ok: false,
+        error: "A conexão ainda não foi configurada. Falta configurar META_APP_ID e META_REDIRECT_URI na Vercel."
+      },
       { status: 503 }
     );
   }
 
-  // The exact Meta authorization URL and scopes will be added when the Meta app
-  // credentials and approved permissions are configured.
-  return NextResponse.json({
-    ok: false,
-    status: "not_configured",
-    message: "Meta OAuth configuration is ready to be connected."
-  });
+  const scope = [
+    "instagram_business_basic",
+    "instagram_business_manage_insights"
+  ].join(",");
+
+  const url = new URL("https://www.instagram.com/oauth/authorize");
+  url.searchParams.set("client_id", appId);
+  url.searchParams.set("redirect_uri", redirectUri);
+  url.searchParams.set("response_type", "code");
+  url.searchParams.set("scope", scope);
+
+  return NextResponse.redirect(url);
 }
