@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 const PLANS = {
   weekly: { label: "Semanal", price: 14.99, days: 7 },
@@ -22,9 +22,8 @@ function formatCpf(value: string) {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const params = useSearchParams();
-  const planKey = (params.get("plan") || "weekly") as keyof typeof PLANS;
-  const plan = PLANS[planKey] || PLANS.weekly;
+  const [planKey, setPlanKey] = useState<keyof typeof PLANS>("weekly");
+  const plan = PLANS[planKey];
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -36,6 +35,8 @@ export default function CheckoutPage() {
   const [confirmed, setConfirmed] = useState(false);
 
   useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("plan") as keyof typeof PLANS | null;
+    if (requested && PLANS[requested]) setPlanKey(requested);
     fetch("/api/auth/me")
       .then(async (r) => {
         if (!r.ok) {
