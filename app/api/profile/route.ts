@@ -18,8 +18,9 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const profileDescription = String(body.profileDescription ?? "").trim();
-    const desiredOutcome = String(body.desiredOutcome ?? "").trim();
+    const freeContext = String(body.freeContext ?? "").trim();
+    const profileDescription = String(body.profileDescription ?? "").trim() || freeContext || String(body.offer ?? "").trim();
+    const desiredOutcome = String(body.desiredOutcome ?? "").trim() || freeContext || String(body.objective ?? "").trim();
     const instagramProfileUrl = clean(body.instagramProfileUrl);
 
     if (!profileDescription || !desiredOutcome || !instagramProfileUrl) {
@@ -58,7 +59,7 @@ export async function PUT(request: Request) {
         referenceProfiles: clean(body.referenceProfiles),
         competitors: clean(body.competitors),
         differentiators: clean(body.differentiators),
-        currentChallenges: clean(body.currentChallenges),
+        currentChallenges: [clean(body.currentChallenges), freeContext ? `Contexto livre do cliente: ${freeContext}` : null].filter(Boolean).join("\n\n") || null,
         salesFunnel: clean(body.salesFunnel),
         ninetyDayGoal: clean(body.ninetyDayGoal),
         successDefinition: clean(body.successDefinition),
