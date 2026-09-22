@@ -30,6 +30,7 @@ model User {
   sessions          Session[]
   strategicProfile  StrategicProfile?
   socialAccounts    SocialAccount[]
+  businessMetricSnapshots BusinessMetricSnapshot[]
   contents          Content[]
   contentDrafts      ContentDraft[]
   events            Event[]
