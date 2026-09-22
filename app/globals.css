@@ -28,3 +28,15 @@
 .evolutionHero{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:24px;border-radius:22px;border:1px solid rgba(225,48,108,.3);background:linear-gradient(120deg,rgba(131,58,180,.25),rgba(225,48,108,.15),rgba(253,29,29,.08));box-shadow:0 20px 60px rgba(131,58,180,.10)}
 .evolutionHero h2{font-size:28px;margin-bottom:0}.evolutionHero p{color:var(--muted);max-width:700px}.instagramCta{background:linear-gradient(135deg,var(--ig-purple),var(--ig-pink),var(--ig-orange),var(--ig-yellow));color:#fff;box-shadow:0 10px 30px rgba(225,48,108,.28)}
 .statusDot{color:#34d399;font-size:13px}.metricForm{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:16px}.metricInput{display:flex;flex-direction:column;gap:7px;color:var(--muted);font-size:13px}.metricInput input{width:100%;padding:12px 13px;border-radius:12px;border:1px solid var(--border);background:#0c0c0f;color:#fff;outline:none}.metricInput input:focus{border-color:var(--ig-pink);box-shadow:0 0 0 3px rgba(225,48,108,.1)}.savedMsg{margin-left:12px;color:#86efac}@media(max-width:800px){.evolutionHero{flex-direction:column;align-items:flex-start}.metricForm{grid-template-columns:1fr}}
+
+.adminHero{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:24px;border:1px solid rgba(225,48,108,.28);border-radius:22px;background:linear-gradient(120deg,rgba(131,58,180,.20),rgba(225,48,108,.12),rgba(252,176,69,.06));box-shadow:0 20px 60px rgba(131,58,180,.08)}
+.adminStats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:18px}
+.adminStat{min-height:130px;padding:18px;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:linear-gradient(145deg,rgba(20,20,24,.96),rgba(17,17,20,.96));display:flex;flex-direction:column;gap:7px}
+.adminStat span{font-size:22px}.adminStat small{color:var(--muted)}.adminStat strong{font-size:26px;margin-top:auto}
+.adminGrid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;margin-top:18px}
+.adminList{display:grid;gap:8px;margin-top:16px;max-height:560px;overflow:auto}
+.adminRow{display:flex;align-items:center;gap:12px;padding:13px;border:1px solid rgba(255,255,255,.06);border-radius:14px;background:rgba(255,255,255,.025)}
+.adminAvatar{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:800;background:linear-gradient(135deg,var(--ig-purple),var(--ig-pink));flex:none}
+.funnel{display:grid;gap:12px;margin-top:18px}.funnelRow{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center}.funnelBar{height:8px;background:#202026;border-radius:99px;margin-top:7px;overflow:hidden}.funnelBar i{display:block;height:100%;background:linear-gradient(90deg,var(--ig-purple),var(--ig-pink),var(--ig-orange));border-radius:99px}
+@media(max-width:1000px){.adminStats{grid-template-columns:repeat(3,1fr)}.adminGrid{grid-template-columns:1fr}}
+@media(max-width:650px){.adminHero{flex-direction:column;align-items:flex-start}.adminStats{grid-template-columns:repeat(2,1fr)}.adminStat{min-height:110px}.adminRow{align-items:flex-start}.adminRow>div:last-child{text-align:left!important}.funnelRow{grid-template-columns:1fr auto}}
