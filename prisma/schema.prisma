@@ -210,9 +210,9 @@ model Subscription {
   status                SubscriptionStatus @default(INACTIVE)
   plan                  String?
   trialEndsAt           DateTime?
-  trialContentLimit     Int                @default(28)
+  trialContentLimit     Int                @default(8)
   trialContentUsed      Int                @default(0)
-  trialImageLimit       Int                @default(4)
+  trialImageLimit       Int                @default(2)
   trialImageUsed        Int                @default(0)
   currentPeriodEnd      DateTime?
   createdAt             DateTime           @default(now())
