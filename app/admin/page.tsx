@@ -7,6 +7,7 @@ type AdminData = {
   stats: { users:number; trialing:number; active:number; connected:number; drafts:number; payments:number; revenue:number; events:number };
   recentUsers: any[];
   recentPayments: any[];
+  marketing: { periodDays:number; pageViews:number; signupStarted:number; leads:number; instagramConnectStarted:number; instagramConnected:number; analysisStarted:number; analysisCompleted:number; strategiesCreated:number; checkoutStarted:number; paymentsApproved:number; subscriptionsStarted:number; sources:[string,number][] };
 };
 
 export default function AdminPage() {
@@ -55,6 +56,38 @@ export default function AdminPage() {
         <section className="feature"><div className="row-between"><div><div className="badge">💳 Pagamentos</div><h2 style={{marginTop:10}}>Movimentações recentes</h2></div><span className="small muted">{s.payments} registros</span></div>
           <div className="adminList">{data.recentPayments.length?data.recentPayments.map(p=><div className="adminRow" key={p.id}><div style={{flex:1}}><strong>{p.user?.name||p.user?.email||"Cliente"}</strong><p className="small muted">{new Date(p.createdAt).toLocaleString("pt-BR")}</p></div><div style={{textAlign:"right"}}><strong>R$ {(p.amountCents/100).toLocaleString("pt-BR",{minimumFractionDigits:2})}</strong><p className="small muted">{p.status}</p></div></div>):<p className="muted">Nenhum pagamento registrado ainda.</p>}</div>
         </section>
+      </div>
+
+      <div className="feature" style={{marginTop:18}}>
+        <div className="row-between"><div><div className="badge">📣 Marketing</div><h2 style={{marginTop:10}}>Funil de vendas</h2></div><span className="small muted">Últimos {data.marketing.periodDays} dias</span></div>
+        <div className="adminStats" style={{marginTop:16}}>
+          <AdminStat icon="👀" label="Visitas na landing" value={data.marketing.pageViews}/>
+          <AdminStat icon="📝" label="Começaram cadastro" value={data.marketing.signupStarted}/>
+          <AdminStat icon="🎯" label="Leads / contas" value={data.marketing.leads}/>
+          <AdminStat icon="📸" label="Início conexão IG" value={data.marketing.instagramConnectStarted}/>
+          <AdminStat icon="🧠" label="Análises iniciadas" value={data.marketing.analysisStarted}/>
+          <AdminStat icon="💳" label="Pagamentos aprovados" value={data.marketing.paymentsApproved}/>
+        </div>
+        <div className="adminGrid" style={{marginTop:16}}>
+          <div>
+            <h3>Jornada</h3>
+            <div className="funnel">
+              <Funnel label="Visita → cadastro iniciado" value={data.marketing.signupStarted}/>
+              <Funnel label="Cadastro concluído" value={data.marketing.leads}/>
+              <Funnel label="Conexão Instagram iniciada" value={data.marketing.instagramConnectStarted}/>
+              <Funnel label="Análise iniciada" value={data.marketing.analysisStarted}/>
+              <Funnel label="Estratégia criada" value={data.marketing.strategiesCreated}/>
+              <Funnel label="Pagamento aprovado" value={data.marketing.paymentsApproved}/>
+            </div>
+          </div>
+          <div>
+            <h3>Origem das visitas/eventos</h3>
+            <div className="adminList">
+              {data.marketing.sources.length ? data.marketing.sources.map(([source,count]) => <div className="adminRow" key={source}><div style={{flex:1}}><strong>{source}</strong></div><strong>{count}</strong></div>) : <p className="muted">Ainda não há dados de origem.</p>}
+            </div>
+            <p className="small muted" style={{marginTop:10}}>Use links com UTM, por exemplo: utm_source=instagram, utm_medium=paid, utm_campaign=teste.</p>
+          </div>
+        </div>
       </div>
 
       <div className="feature" style={{marginTop:18}}><div className="badge">📊 Funil</div><h2 style={{marginTop:10}}>Ativação do produto</h2><div className="funnel"><Funnel label="Usuários cadastrados" value={s.users}/><Funnel label="Instagram conectado" value={s.connected}/><Funnel label="Conteúdos criados" value={s.drafts}/><Funnel label="Planos ativos" value={s.active}/></div></div>
