@@ -141,6 +141,7 @@ model ContentDraft {
   scheduledAt         DateTime?
   publishedAt         DateTime?
   status              ContentDraftStatus @default(IDEA)
+  slotKey             String?
   dayLabel            String?
   timeLabel            String?
   format              String
@@ -162,6 +163,7 @@ model ContentDraft {
 
   @@index([userId, status])
   @@index([userId, scheduledAt])
+  @@index([userId, slotKey])
 }
 
 model Content {
