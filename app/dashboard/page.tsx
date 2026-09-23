@@ -132,12 +132,16 @@ function Results({profile}:{profile:Profile}){
  async function saveBusiness(){setSaving(true);setSaved(false);try{const r=await fetch("/api/metrics/business",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});if(r.ok){const x=await r.json();setBusiness((v:any)=>({snapshots:[x.snapshot,...(v?.snapshots||[])]}));setSaved(true);setForm({instagramDms:"",instagramLeads:"",instagramSales:"",whatsappConversations:"",whatsappLeads:"",whatsappSales:"",salesCount:"",revenue:""})}}finally{setSaving(false)}}
  const account=data?.account; const media=Array.isArray(account?.mediaCache)?account.mediaCache:[];
  const lastBusiness=business?.snapshots?.[0], prevBusiness=business?.snapshots?.[1];
- const bDelta=(key:string)=>lastBusiness&&prevBusiness?Number(lastBusiness[key]||0)-Number(prevBusiness[key]||0):null;
+ const bDelta=(key:string):number|null=>lastBusiness&&prevBusiness?Number(lastBusiness[key]||0)-Number(prevBusiness[key]||0):null;
+ const instagramDmsDelta=bDelta("instagramDms");
+ const instagramLeadsDelta=bDelta("instagramLeads");
+ const salesCountDelta=bDelta("salesCount");
+ const revenueDelta=bDelta("revenue");
  const insights:string[]=[];
- if(bDelta("instagramDms")!=null&&bDelta("instagramDms")>0) insights.push("As conversas no Instagram aumentaram. Observe quais conteúdos e ofertas estavam ativos nesse período e repita o padrão.");
- if(bDelta("instagramLeads")!=null&&bDelta("instagramLeads")<0) insights.push("Os leads do Instagram caíram em relação ao registro anterior. Revise CTA, oferta e caminho entre conteúdo e conversa.");
- if(bDelta("salesCount")!=null&&bDelta("salesCount")>0) insights.push("As vendas registradas aumentaram. Identifique a origem das vendas que funcionaram e transforme esse tema em novas peças.");
- if(bDelta("revenue")!=null&&bDelta("revenue")<0) insights.push("O faturamento registrado caiu. Compare volume de leads, vendas e ticket antes de mudar toda a estratégia.");
+ if(instagramDmsDelta!==null&&instagramDmsDelta>0) insights.push("As conversas no Instagram aumentaram. Observe quais conteúdos e ofertas estavam ativos nesse período e repita o padrão.");
+ if(instagramLeadsDelta!==null&&instagramLeadsDelta<0) insights.push("Os leads do Instagram caíram em relação ao registro anterior. Revise CTA, oferta e caminho entre conteúdo e conversa.");
+ if(salesCountDelta!==null&&salesCountDelta>0) insights.push("As vendas registradas aumentaram. Identifique a origem das vendas que funcionaram e transforme esse tema em novas peças.");
+ if(revenueDelta!==null&&revenueDelta<0) insights.push("O faturamento registrado caiu. Compare volume de leads, vendas e ticket antes de mudar toda a estratégia.");
  if(latest&&previous){if((delta("followers")||0)>0) insights.push("O perfil ganhou seguidores desde o snapshot anterior. Use os conteúdos recentes como referência e acompanhe se esse crescimento também gera conversas ou vendas.");if((delta("likes")||0)<0) insights.push("As interações dos 12 conteúdos analisados caíram. Teste novos ganchos e formatos e acompanhe a reação no próximo ciclo.")}
  if(!insights.length) insights.push("Ainda faltam registros suficientes para uma leitura comparativa. Sincronize o Instagram e registre seus resultados periodicamente para o painel identificar padrões.");
  return <div style={{marginTop:22}}>
