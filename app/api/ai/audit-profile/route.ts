@@ -116,7 +116,7 @@ export async function POST() {
     }
     for (const item of media) {
       const url = item?.media_url || item?.thumbnail_url;
-      if (typeof url === "string" && /^https?:\\/\\//.test(url)) {
+      if (typeof url === "string" && /^https?:\/\//.test(url)) {
         inputContent.push({ type: "input_image", image_url: url });
       }
     }
