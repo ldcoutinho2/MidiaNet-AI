@@ -64,8 +64,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: data?.message || "Não foi possível gerar o Pix." }, { status: 502 });
     }
 
-    await db.payment.create({
-      data: {
+    // O webhook pode chegar muito rápido. Se ele já tiver criado/confirmado
+    // o pagamento, não podemos sobrescrever PAID com PENDING.
+    await db.payment.upsert({
+      where: { providerPaymentId: String(data.id) },
+      update: {
+        userId: user.id,
+        provider: `mercadopago:${key}:pix`,
+        amountCents: plan.amountCents,
+        currency: "BRL",
+      },
+      create: {
         userId: user.id,
         provider: `mercadopago:${key}:pix`,
         providerPaymentId: String(data.id),
