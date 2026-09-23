@@ -9,7 +9,7 @@ const PLANS = {
 } as const;
 
 function digits(value: unknown) {
-  return String(value || "").replace(/\\D/g, "");
+  return String(value || "").replace(/\D/g, "");
 }
 
 export async function POST(request: Request) {
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 
     if (!plan) return NextResponse.json({ error: "Plano inválido." }, { status: 400 });
     if (!name) return NextResponse.json({ error: "Informe seu nome." }, { status: 400 });
-    if (!/^([^\\s@]+)@([^\\s@]+)\\.([^\\s@]+)$/.test(email)) return NextResponse.json({ error: "Informe um e-mail válido." }, { status: 400 });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "Informe um e-mail válido." }, { status: 400 });
     if (whatsapp.length < 10 || whatsapp.length > 13) return NextResponse.json({ error: "Informe um WhatsApp válido." }, { status: 400 });
 
     await db.user.update({ where: { id: user.id }, data: { name, phone: whatsapp } });
