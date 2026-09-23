@@ -66,7 +66,7 @@ export default function CheckoutPage() {
 
     const cleanWhatsapp = onlyDigits(whatsapp);
     if (!name.trim()) return setError("Informe seu nome.");
-    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email.trim())) return setError("Informe um e-mail válido.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError("Informe um e-mail válido.");
     if (cleanWhatsapp.length < 10 || cleanWhatsapp.length > 13) return setError("Informe um WhatsApp válido.");
 
     setLoading(true);
