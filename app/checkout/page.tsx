@@ -9,7 +9,7 @@ const PLANS = {
 } as const;
 
 function onlyDigits(value: string) {
-  return value.replace(/\\D/g, "");
+  return value.replace(/\D/g, "");
 }
 
 function formatWhatsapp(value: string) {
