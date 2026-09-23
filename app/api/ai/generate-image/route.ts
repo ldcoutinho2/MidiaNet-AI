@@ -11,6 +11,10 @@ export async function POST(request: Request) {
   const prompt = String(body.prompt || "").trim();
   if (!prompt) return NextResponse.json({ error: "Prompt visual ausente." }, { status: 400 });
 
+  // Validate the user's remaining image allowance before spending an OpenAI generation.
+  const entitlement = await consumeImageGeneration(user.id, { dryRun: true });
+  if (!entitlement.ok) return NextResponse.json({ error: entitlement.error }, { status: 402 });
+
   try {
     const response = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
