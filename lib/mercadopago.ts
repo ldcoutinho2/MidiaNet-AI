@@ -63,6 +63,11 @@ export async function confirmMercadoPagoPayment(
 
   if (status !== "approved") {
     const existing = await db.payment.findUnique({ where: { providerPaymentId: paymentId } });
+    // Um pagamento que já foi aprovado não volta para PENDING/IN_PROCESS
+    // só porque recebemos outra notificação do mesmo paymentId.
+    if (existing?.status === "PAID") {
+      return { ok: true as const, paid: true as const, activated: false as const, status: "approved" as const };
+    }
     if (existing && existing.status !== status.toUpperCase()) {
       await db.payment.update({
         where: { id: existing.id },
