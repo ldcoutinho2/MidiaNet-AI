@@ -34,9 +34,11 @@ export async function POST(request: Request) {
 
     await db.user.update({ where: { id: user.id }, data: { name, phone: whatsapp } });
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
+    // Use the public origin of the current request. This avoids sending Mercado Pago
+    // a malformed/stale NEXT_PUBLIC_APP_URL from the hosting environment.
+    const publicOrigin = new URL(request.url).origin;
     const externalReference = `midianet:${user.id}:${key}:${randomUUID()}`;
-    const notificationUrl = new URL("/api/payments/mercadopago/webhook", baseUrl).toString();
+    const notificationUrl = new URL("/api/payments/mercadopago/webhook", publicOrigin).toString();
 
     const response = await fetch("https://api.mercadopago.com/v1/payments", {
       method: "POST",
