@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import {
-  confirmMercadoPagoPayment,
-  fetchMercadoPagoPayment,
-} from "@/lib/mercadopago";
+import { confirmMercadoPagoPayment } from "@/lib/mercadopago";
 import { db } from "@/lib/db";
 
 export async function GET(request: Request) {
@@ -19,25 +16,20 @@ export async function GET(request: Request) {
   if (!existing) return NextResponse.json({ status: "NOT_FOUND" }, { status: 404 });
   if (existing.status === "PAID") return NextResponse.json({ status: "PAID" });
 
-  const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
-  if (!accessToken) return NextResponse.json({ status: existing.status });
+  if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+    return NextResponse.json({ status: existing.status });
+  }
 
   try {
-    // Assim como no MidiaNetDigital, o status real vem de
-    // GET /v1/payments/{paymentId}. A confirmação é centralizada e idempotente.
-    const payment = await fetchMercadoPagoPayment(paymentId);
-    if (!payment) return NextResponse.json({ status: existing.status });
-
-    const externalReference = String(payment.external_reference || "");
-    if (!externalReference.includes(`midianet:${user.id}:`)) {
-      return NextResponse.json({ status: existing.status });
-    }
-
+    // Mesmo padrão do MidiaNetDigital: consulta o pagamento real no Mercado Pago.
+    // A confirmação da assinatura fica centralizada e é idempotente.
     const result = await confirmMercadoPagoPayment(paymentId, user.id);
     if (!result.ok) return NextResponse.json({ status: existing.status });
 
     return NextResponse.json({
-      status: result.paid ? "PAID" : String(result.status || existing.status).toUpperCase(),
+      status: result.paid
+        ? "PAID"
+        : String(result.status || existing.status).toUpperCase(),
     });
   } catch (error) {
     console.error("mercadopago_status_error", error);
