@@ -81,16 +81,20 @@ function normalizePost(post: AnyRecord, index: number): InstagramPost {
   const mediaUrl = firstString(
     post.mediaUrl,
     post.displayUrl,
+    post.display_url,
     post.imageUrl,
     post.image_url,
     post.videoUrl,
     post.video_url,
-    post.url
+    post.url,
+    post.postUrl
   );
   const thumbnail = firstString(
     post.thumbnailUrl,
     post.thumbnail_url,
+    post.thumbnailSrc,
     post.displayUrl,
+    post.display_url,
     post.imageUrl,
     post.image_url
   );
@@ -106,13 +110,14 @@ function normalizePost(post: AnyRecord, index: number): InstagramPost {
     permalink: firstString(post.permalink, post.url, post.webUrl),
     timestamp,
     like_count: firstNumber(post.likeCount, post.likesCount, post.likes, post.like_count),
-    comments_count: firstNumber(post.commentsCount, post.comments, post.commentCount, post.comments_count),
+    comments_count: firstNumber(post.commentsCount, post.comments, post.commentCount, post.comments_count, post.comment_count),
   };
 }
 
 function normalizeProfile(item: AnyRecord): InstagramProfileResult {
-  const username = firstString(item.username, item.userName, item.handle);
-  const id = firstString(item.id, item.userId, item.pk, item.fbid);
+  const meta = item.author_meta && typeof item.author_meta === "object" ? item.author_meta : {};
+  const username = firstString(item.username, item.userName, item.handle, meta.username);
+  const id = firstString(item.id, item.userId, item.pk, item.fbid, meta.id);
   if (!username || !id) throw new Error("A API da Apify não retornou um perfil válido.");
 
   const latest = Array.isArray(item.latestPosts)
@@ -125,13 +130,23 @@ function normalizeProfile(item: AnyRecord): InstagramProfileResult {
     id,
     username: username.replace(/^@/, "").toLowerCase(),
     url: firstString(item.url, item.inputUrl) || `https://www.instagram.com/${username}/`,
-    fullName: firstString(item.fullName, item.full_name, item.name),
-    biography: firstString(item.biography, item.bio),
-    website: firstString(item.externalUrl, item.website, item.external_url),
-    profilePictureUrl: firstString(item.profilePicUrlHD, item.profilePicUrl, item.profilePictureUrl),
-    followersCount: firstNumber(item.followersCount, item.followers, item.followerCount),
-    followsCount: firstNumber(item.followsCount, item.followingCount, item.following),
-    mediaCount: firstNumber(item.postsCount, item.mediaCount, item.postCount),
+    fullName: firstString(item.fullName, item.full_name, item.name, meta.fullName, meta.full_name),
+    biography: firstString(item.biography, item.bio, meta.biography, meta.bio),
+    website: firstString(item.externalUrl, item.website, item.external_url, meta.externalUrl, meta.website, meta.external_url),
+    profilePictureUrl: firstString(
+      item.profilePicUrlHD,
+      item.profilePicUrlHd,
+      item.profilePicUrl,
+      item.profilePictureUrl,
+      item.profile_pic_url,
+      meta.profilePicUrlHD,
+      meta.profilePicUrlHd,
+      meta.profilePicUrl,
+      meta.profile_pic_url
+    ),
+    followersCount: firstNumber(item.followersCount, item.followers, item.followerCount, item.followers_count, meta.followersCount, meta.followers_count),
+    followsCount: firstNumber(item.followsCount, item.followingCount, item.following, item.following_count, meta.followsCount, meta.following_count),
+    mediaCount: firstNumber(item.postsCount, item.mediaCount, item.postCount, item.posts_count, meta.postsCount, meta.posts_count),
     isBusinessAccount: typeof item.isBusinessAccount === "boolean" ? item.isBusinessAccount : null,
     private: typeof item.private === "boolean" ? item.private : null,
     verified: typeof item.verified === "boolean" ? item.verified : null,
