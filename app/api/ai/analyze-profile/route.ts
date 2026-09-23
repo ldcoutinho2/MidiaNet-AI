@@ -233,7 +233,7 @@ export async function POST() {
         "Se faltar uma informação essencial, use uma hipótese conservadora e deixe isso refletido na estratégia.",
         "Priorize clareza, especificidade e execução. Evite clichês e frases que não orientem uma ação concreta.",
         instagramReference
-          ? "O cliente forneceu um perfil do Instagram. Use a busca na web apenas para informações públicas que realmente possam melhorar a análise. Se não houver informação confiável, siga somente com os dados fornecidos."
+          ? "O cliente forneceu um perfil do Instagram. Use os dados públicos e as imagens enviadas como fontes principais. Não inclua URLs, links, endereços de sites, referências de busca ou citações de fontes dentro dos campos de diagnóstico, resumo, recomendações, limitações ou plano. Se uma informação não puder ser confirmada, diga apenas que não foi possível confirmar."
           : "Não foi fornecido um perfil do Instagram para pesquisa.",
         "Responda exclusivamente no formato estruturado solicitado."
       ].join("\n"),
