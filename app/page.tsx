@@ -93,7 +93,7 @@ function SalesLanding() {
           <div className="salesCard"><span>✍️</span><h3>Criação assistida</h3><p>Transforme uma ideia em diferentes formatos e refine títulos, ganchos, roteiros, legendas e chamadas para ação.</p></div>
           <div className="salesCard"><span>📊</span><h3>Evolução</h3><p>Acompanhe resultados e registre métricas de Instagram, leads, conversas, vendas e faturamento para orientar decisões.</p></div>
           <div className="salesCard"><span>🔁</span><h3>Aprendizado contínuo</h3><p>O objetivo é usar o que aconteceu nos conteúdos anteriores para ajustar as próximas recomendações.</p></div>
-          <div className="salesCard"><span>📸</span><h3>Instagram conectado</h3><p>Quando conectado, o sistema pode trabalhar com métricas autorizadas da conta profissional para tornar a análise mais contextual.</p></div>
+          <div className="salesCard"><span>📸</span><h3>Dados do Instagram</h3><p>Quando disponível, o sistema pode usar dados públicos do perfil e conteúdos recentes para tornar a análise mais contextual.</p></div>
         </div>
       </section>
 
@@ -114,7 +114,7 @@ function SalesLanding() {
         <div className="salesTrial">
           <div>
             <h2>Teste o MidiaNet AI por 2 dias.</h2>
-            <p>Crie sua conta, conheça o fluxo e gere sua primeira estratégia. Você pode começar mesmo sem conectar o Instagram.</p>
+            <p>Crie sua conta, conheça o fluxo e gere sua primeira estratégia. Você pode começar mesmo sem usar dados públicos do Instagram.</p>
             <div className="salesFine">Durante o teste: 1 geração de estratégia e até 2 gerações de imagem.</div>
           </div>
           <Link className="btn primary" href="/onboarding" onClick={startSignup}>Começar agora →</Link>
@@ -124,7 +124,7 @@ function SalesLanding() {
       <section className="salesSection section">
         <div className="salesSectionHeader"><div className="badge">Dúvidas</div><h2>Perguntas frequentes</h2></div>
         <div className="salesFaq">
-          <details><summary>Preciso conectar meu Instagram?</summary><p>Não. Você pode começar informando seu perfil e objetivo. A conexão é usada para recursos que dependem de métricas autorizadas.</p></details>
+          <details><summary>Preciso conectar meu Instagram?</summary><p>Não. Você pode começar informando seu perfil e objetivo. A conexão pode ser usada para recursos que dependem de dados adicionais do perfil.</p></details>
           <details><summary>O MidiaNet AI cria conteúdo?</summary><p>Sim. O fluxo inclui planejamento, ideias, ganchos, roteiros, legendas, CTAs e refinamento. A criação visual por IA também faz parte do produto.</p></details>
           <details><summary>Ele garante mais seguidores ou vendas?</summary><p>Não há garantia de resultado. O sistema organiza estratégia, execução e análise para ajudar você a tomar decisões com mais contexto.</p></details>
           <details><summary>O que acontece depois do teste?</summary><p>O teste serve para você conhecer o produto. Os planos pagos podem ser apresentados no momento de contratação.</p></details>
