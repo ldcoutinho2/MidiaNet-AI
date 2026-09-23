@@ -39,11 +39,12 @@ export async function consumeContentGeneration(userId: string) {
   return { ok: true as const };
 }
 
-export async function consumeImageGeneration(userId: string) {
+export async function consumeImageGeneration(userId: string, options?: { dryRun?: boolean }) {
   const e = await getEntitlement(userId);
   if (!e.active) return { ok: false as const, error: "Seu teste terminou. Escolha um plano para continuar gerando imagens." };
   if (e.trialActive && e.imageRemaining <= 0) return { ok: false as const, error: "Você atingiu o limite de imagens do teste. Escolha um plano para continuar." };
   if (e.trialActive) {
+    if (options?.dryRun) return { ok: true as const };
     const updated = await db.subscription.updateMany({
       where: {
         userId,
