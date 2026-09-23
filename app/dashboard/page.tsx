@@ -41,7 +41,24 @@ export default function Dashboard(){
 }
 function isCurrentStrategy(v:any):v is AIProfile{return Boolean(v&&typeof v==="object"&&typeof v.objective==="string"&&Array.isArray(v.weeklyPlan)&&(v.weeklyPlan.length===2||v.weeklyPlan.length===7)&&v.weeklyPlan.every((d:any)=>d&&Array.isArray(d.slots)&&d.slots.length===4))}
 function SetupStrategy({analyzing,analyze,hasOldStrategy}:{analyzing:boolean;analyze:()=>void;hasOldStrategy:boolean}){return <div className="feature" style={{marginTop:24}}><div className="badge">{hasOldStrategy?"Atualização":"1º passo"}</div><h2 style={{marginTop:12}}>{hasOldStrategy?"Sua estratégia ganhou a nova programação.":"Vamos transformar seu perfil em um plano."}</h2><p className="muted" style={{marginTop:8,maxWidth:760}}>A IA vai montar diagnóstico, estratégia, semana completa e conteúdos prontos para você executar — 1 Story + 3 publicações principais por dia.</p><button className="btn primary" onClick={analyze} disabled={analyzing} style={{marginTop:18}}>{analyzing?"Analisando seu perfil...":hasOldStrategy?"Atualizar minha estratégia →":"Montar minha estratégia →"}</button></div>}
-function Home({ai,onWeek}:{ai:AIProfile;onWeek:()=>void}){const today=useMemo(()=>ai.weeklyPlan?.[0],[ai.weeklyPlan]);return <><div className="grid3" style={{marginTop:22}}><Info title="🎯 Meu objetivo" value={ai.objective}/><Info title="📍 Onde estou" value={ai.currentStage}/><Info title="🚧 Principal problema" value={ai.mainProblem}/></div><div className="feature" style={{marginTop:18}}><div className="badge">🧭 Direção</div><h2 style={{marginTop:12}}>O que vamos fazer</h2><p style={{marginTop:8}}>{ai.strategy}</p><div className="grid3" style={{marginTop:18}}><Info title="📅 Frequência" value={ai.postingFrequency}/><Info title="🔥 Missão da semana" value={ai.weeklyMission}/><Info title="👉 Próximo passo" value={ai.nextAction}/></div></div>{today&&<div className="feature" style={{marginTop:18}}><div className="badge">🚀 Comece por aqui</div><h2 style={{marginTop:12}}>{today.day}</h2><p className="muted" style={{marginTop:6}}>{today.mission}</p><div className="grid2" style={{marginTop:14}}>{today.slots.map((s,i)=><MiniSlot key={i} slot={s}/>)}</div><button className="btn primary" onClick={onWeek} style={{marginTop:14}}>Ver minha semana completa →</button></div>}</>}
+function Home({ai,onWeek}:{ai:AIProfile;onWeek:()=>void}){
+ const today=useMemo(()=>ai.weeklyPlan?.[0],[ai.weeklyPlan]);
+ const actions=today?.slots?.slice(0,3)||[];
+ return <>
+  <div className="grid3" style={{marginTop:22}}><Info title="🎯 Meu objetivo" value={ai.objective}/><Info title="📍 Onde estou" value={ai.currentStage}/><Info title="🚧 Principal problema" value={ai.mainProblem}/></div>
+  <div className="feature" style={{marginTop:18}}><div className="badge">🧭 Direção</div><h2 style={{marginTop:12}}>O que vamos fazer</h2><p style={{marginTop:8}}>{ai.strategy}</p><div className="grid3" style={{marginTop:18}}><Info title="📅 Frequência" value={ai.postingFrequency}/><Info title="🔥 Missão da semana" value={ai.weeklyMission}/><Info title="👉 Próximo passo" value={ai.nextAction}/></div></div>
+  {today&&<>
+   <div className="feature" style={{marginTop:18,border:"1px solid rgba(255,255,255,.12)"}}>
+    <div className="badge">🚀 O QUE FAZER HOJE</div>
+    <h2 style={{marginTop:12}}>Seu próximo passo é simples</h2>
+    <p className="muted" style={{marginTop:6}}>{today.day} · {today.mission}</p>
+    <div style={{display:"grid",gap:10,marginTop:14}}>{actions.map((s,i)=><div className="card" key={i} style={{display:"flex",gap:12,alignItems:"center"}}><div className="badge">{i+1}</div><div style={{flex:1}}><strong>{fmtIcon[s.format]||"✨"} {s.time} · {s.title}</strong><p className="small muted" style={{marginTop:4}}>{s.objective}</p></div></div>)}</div>
+    <div className="row" style={{marginTop:14,flexWrap:"wrap"}}><button className="btn primary" onClick={onWeek}>Abrir conteúdo de hoje →</button><span className="small muted">Escolha um item para ver gancho, roteiro, legenda e CTA.</span></div>
+   </div>
+  </>}
+  {today&&<div className="feature" style={{marginTop:18}}><div className="badge">📅 Semana</div><h2 style={{marginTop:12}}>{today.day}</h2><p className="muted" style={{marginTop:6}}>{today.mission}</p><div className="grid2" style={{marginTop:14}}>{today.slots.map((s,i)=><MiniSlot key={i} slot={s}/>)}</div><button className="btn secondary" onClick={onWeek} style={{marginTop:14}}>Ver minha semana completa →</button></div>}
+ </>
+}
 function Audit({audit,onAnalyze,analyzing}:{audit?:ProfileAudit;onAnalyze:()=>void;analyzing:boolean}){
  if(!audit) return <div className="feature" style={{marginTop:22}}><div className="badge">🔍 Auditoria do perfil</div><h2 style={{marginTop:12}}>Vamos analisar a primeira impressão do seu Instagram.</h2><p className="muted" style={{marginTop:8}}>A IA vai revisar posicionamento, nome, bio, foto, destaques, grade e conversão usando as informações disponíveis.</p><button className="btn primary" style={{marginTop:16}} onClick={onAnalyze} disabled={analyzing}>{analyzing?"Analisando perfil...":"🔍 Fazer auditoria agora"}</button></div>;
  const items=[
