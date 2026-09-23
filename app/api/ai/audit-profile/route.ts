@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { openai } from "@/lib/openai";
+import { syncInstagramAccount } from "@/lib/instagram";
 
 const schema = {
   type: "object",
@@ -72,21 +73,29 @@ export async function POST() {
   if (!account) return NextResponse.json({ error: "Nenhum Instagram conectado." }, { status: 400 });
 
   try {
-    const media = Array.isArray(account.mediaCache) ? account.mediaCache.slice(0, 6) : [];
+    // Refresh Apify data first so signed Instagram CDN image URLs are fresh when possible.
+    try {
+      await syncInstagramAccount(account.id);
+    } catch (refreshError) {
+      console.warn("[audit-profile] refresh before audit failed", refreshError);
+    }
+    const freshAccount = await db.socialAccount.findUnique({ where: { id: account.id } });
+    const sourceAccount = freshAccount || account;
+    const media = Array.isArray(sourceAccount.mediaCache) ? sourceAccount.mediaCache.slice(0, 6) : [];
     const inputContent: any[] = [{
       type: "input_text",
       text: JSON.stringify({
         cliente: user.name,
         instagram: {
-          username: account.username,
-          nome: account.fullName,
-          bio: account.biography,
-          site: account.website,
-          fotoPerfilUrl: account.profilePictureUrl,
-          seguidores: account.followersCount,
-          seguindo: account.followsCount,
-          publicacoes: account.mediaCount,
-          ultimaSincronizacao: account.lastSyncedAt,
+          username: sourceAccount.username,
+          nome: sourceAccount.fullName,
+          bio: sourceAccount.biography,
+          site: sourceAccount.website,
+          fotoPerfilUrl: sourceAccount.profilePictureUrl,
+          seguidores: sourceAccount.followersCount,
+          seguindo: sourceAccount.followsCount,
+          publicacoes: sourceAccount.mediaCount,
+          ultimaSincronizacao: sourceAccount.lastSyncedAt,
           ultimosConteudos: media
         },
         negocio: {
@@ -102,8 +111,8 @@ export async function POST() {
       })
     }];
 
-    if (account.profilePictureUrl) {
-      inputContent.push({ type: "input_image", image_url: account.profilePictureUrl });
+    if (sourceAccount.profilePictureUrl) {
+      inputContent.push({ type: "input_image", image_url: sourceAccount.profilePictureUrl });
     }
     for (const item of media) {
       const url = item?.media_url || item?.thumbnail_url;
