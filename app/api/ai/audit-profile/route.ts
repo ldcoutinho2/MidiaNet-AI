@@ -115,7 +115,11 @@ export async function POST() {
       inputContent.push({ type: "input_image", image_url: sourceAccount.profilePictureUrl });
     }
     for (const item of media) {
-      const url = item?.media_url || item?.thumbnail_url;
+      const itemObject =
+        item && typeof item === "object" && !Array.isArray(item)
+          ? (item as Record<string, unknown>)
+          : null;
+      const url = itemObject?.media_url || itemObject?.thumbnail_url;
       if (typeof url === "string" && /^https?:\/\//.test(url)) {
         inputContent.push({ type: "input_image", image_url: url });
       }
