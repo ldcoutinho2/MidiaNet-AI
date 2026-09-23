@@ -1,4 +1,5 @@
 // MidiaNet AI profile analysis route
+// Production build verification
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
