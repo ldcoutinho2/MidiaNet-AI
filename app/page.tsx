@@ -58,10 +58,10 @@ function SalesLanding() {
             <Link className="btn secondary" href="#como-funciona">Ver como funciona ↓</Link>
           </div>
           <div className="salesProof">
-            <span>✓ 2 dias para testar</span>
-            <span>✓ Estratégia personalizada</span>
+            <span>✓ 2 dias grátis</span>
+            <span>✓ 1 estratégia completa no teste</span>
             <span>✓ Até 2 imagens no teste</span>
-            <span>✓ Pode começar sem conectar Instagram</span>
+            <span>✓ Comece sem conectar o Instagram</span>
           </div>
         </div>
 
@@ -122,12 +122,41 @@ function SalesLanding() {
       </section>
 
       <section className="salesSection section">
+        <div className="salesSectionHeader">
+          <div className="badge">Planos</div>
+          <h2>Comece grátis. Continue quando fizer sentido.</h2>
+          <p className="muted" style={{lineHeight:1.7}}>
+            O teste serve para você experimentar o fluxo antes de pagar. Depois, escolha o período que combina com sua rotina.
+          </p>
+        </div>
+        <div className="salesCards">
+          <div className="salesCard">
+            <span>🧪</span><h3>Teste grátis · 2 dias</h3>
+            <p><strong style={{fontSize:28}}>R$ 0</strong></p>
+            <p>1 geração de estratégia + até 2 gerações de imagem. Sem cobrança para começar.</p>
+            <Link className="btn primary" href="/onboarding" onClick={startSignup}>Testar grátis →</Link>
+          </div>
+          <div className="salesCard">
+            <span>⚡</span><h3>Semanal · 7 dias</h3>
+            <p><strong style={{fontSize:28}}>R$ 14,99</strong></p>
+            <p>Acesso completo ao MidiaNet AI durante 7 dias, com estratégia, criação, planejamento e métricas.</p>
+          </div>
+          <div className="salesCard">
+            <span>🚀</span><h3>Mensal · 30 dias</h3>
+            <p><strong style={{fontSize:28}}>R$ 29,99</strong></p>
+            <p>Acesso completo durante 30 dias. Pagamento por Pix processado pelo Mercado Pago.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="salesSection section">
         <div className="salesSectionHeader"><div className="badge">Dúvidas</div><h2>Perguntas frequentes</h2></div>
         <div className="salesFaq">
           <details><summary>Preciso conectar meu Instagram?</summary><p>Não. Você pode começar informando seu perfil e objetivo. A conexão pode ser usada para recursos que dependem de dados adicionais do perfil.</p></details>
           <details><summary>O MidiaNet AI cria conteúdo?</summary><p>Sim. O fluxo inclui planejamento, ideias, ganchos, roteiros, legendas, CTAs e refinamento. A criação visual por IA também faz parte do produto.</p></details>
           <details><summary>Ele garante mais seguidores ou vendas?</summary><p>Não há garantia de resultado. O sistema organiza estratégia, execução e análise para ajudar você a tomar decisões com mais contexto.</p></details>
-          <details><summary>O que acontece depois do teste?</summary><p>O teste serve para você conhecer o produto. Os planos pagos podem ser apresentados no momento de contratação.</p></details>
+          <details><summary>Quanto custa depois do teste?</summary><p>Você pode continuar por R$ 14,99 por 7 dias ou R$ 29,99 por 30 dias. O pagamento é feito por Pix no checkout.</p></details>
+          <details><summary>O MidiaNet publica sozinho no Instagram?</summary><p>Não. O produto organiza a estratégia, cria e orienta o conteúdo e ajuda a analisar os resultados. A publicação continua sob seu controle.</p></details>
         </div>
       </section>
 
