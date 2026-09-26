@@ -348,6 +348,7 @@ function Results({profile,onNewIdea}:{profile:Profile;onNewIdea:()=>void}){
  async function load(){const [a,b]=await Promise.all([fetch("/api/metrics/summary").then(r=>r.json()),fetch("/api/metrics/business").then(r=>r.json())]);setData(a);setBusiness(b)}
  useEffect(()=>{load()},[]);
  const ai:any=profile.aiProfile&&typeof profile.aiProfile==="object"?profile.aiProfile:null;
+ const currentBusiness=Array.isArray(business?.snapshots)?business.snapshots[0]:null;
  const snapshots=Array.isArray(data?.snapshots)?data.snapshots:[];
  const latest=data?.latest, previous=data?.previous;
  const delta=(key:string)=>latest&&previous&&latest[key]!=null&&previous[key]!=null?Number(latest[key])-Number(previous[key]):null;
