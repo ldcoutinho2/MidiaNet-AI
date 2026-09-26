@@ -73,7 +73,7 @@ export default function Dashboard(){
  const ai=isCurrentStrategy(raw)?raw:null;
  let panel:ReactNode;
  if(!ai) panel=<SetupStrategy analyzing={analyzing} analyze={analyze} hasOldStrategy={Boolean(raw)}/>;
- else if(tab==="home") panel=<Home ai={ai} onWeek={()=>setTab("week")}/>;
+ else if(tab==="home") panel=<Home ai={ai} name={data.user.name||"criador"} drafts={drafts} onWeek={()=>setTab("week")}/>;
  else if(tab==="week") panel=<Week ai={ai} trial={data.user.subscription?.status==="TRIALING"} drafts={drafts} onDraftChange={(d)=>setDrafts(v=>v.some(x=>x.id===d.id)?v.map(x=>x.id===d.id?d:x):[...v,d])}/>;
  else if(tab==="diagnostic") panel=<Diagnostic ai={ai} onAnalyze={auditProfile} analyzing={analyzing}/>;
  else if(tab==="results") panel=<Results profile={p}/>;
