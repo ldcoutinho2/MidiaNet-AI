@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { openai } from "@/lib/openai";
+import { consumeContentGeneration } from "@/lib/entitlements";
 
 const schema = {
   type: "object",
@@ -56,6 +57,9 @@ export async function POST(request: Request) {
     const message = String(body.message || "").trim();
     const history = Array.isArray(body.history) ? body.history.slice(-8) : [];
     const format = String(body.format || idea.format || "Reels");
+
+    const entitlement = await consumeContentGeneration(user.id);
+    if (!entitlement.ok) return NextResponse.json({ error: entitlement.error }, { status: 402 });
 
     const profile = user.strategicProfile;
     if (!profile) return NextResponse.json({ error: "Complete seu perfil primeiro." }, { status: 400 });
