@@ -111,9 +111,9 @@ export default function Dashboard(){
 }
 
 function isCurrentStrategy(v:any):v is AIProfile{
- return Boolean(v&&typeof v==="object"&&typeof v.objective==="string"&&Array.isArray(v.weeklyPlan)&&v.weeklyPlan.length>=2&&v.weeklyPlan.length<=7&&v.weeklyPlan.every((d:any)=>d&&Array.isArray(d.slots)&&d.slots.length>=1&&d.slots.length<=4));
+ return Boolean(v&&typeof v==="object"&&typeof v.objective==="string"&&Array.isArray(v.weeklyPlan)&&v.weeklyPlan.length>=2&&v.weeklyPlan.length<=7&&v.weeklyPlan.every((d:any)=>d&&Array.isArray(d.slots)&&d.slots.length>=1&&d.slots.length<=3));
 }
-function SetupStrategy({analyzing,analyze,hasOldStrategy}:{analyzing:boolean;analyze:()=>void;hasOldStrategy:boolean}){return <div className="feature" style={{marginTop:24}}><div className="badge">{hasOldStrategy?"Atualização":"1º passo"}</div><h2 style={{marginTop:12}}>{hasOldStrategy?"Sua estratégia ganhou a nova programação.":"Vamos transformar seu perfil em um plano."}</h2><p className="muted" style={{marginTop:8,maxWidth:760}}>A IA vai montar diagnóstico, estratégia, semana completa e conteúdos prontos para você executar — 1 Story + 3 publicações principais por dia.</p><button className="btn primary" onClick={analyze} disabled={analyzing} style={{marginTop:18}}>{analyzing?"Analisando seu perfil...":hasOldStrategy?"Atualizar minha estratégia →":"Montar minha estratégia →"}</button></div>}
+function SetupStrategy({analyzing,analyze,hasOldStrategy}:{analyzing:boolean;analyze:()=>void;hasOldStrategy:boolean}){return <div className="feature" style={{marginTop:24}}><div className="badge">{hasOldStrategy?"Atualização":"1º passo"}</div><h2 style={{marginTop:12}}>{hasOldStrategy?"Sua estratégia ganhou a nova programação.":"Vamos transformar seu perfil em um plano."}</h2><p className="muted" style={{marginTop:8,maxWidth:760}}>A IA vai montar diagnóstico, estratégia, semana completa e conteúdos prontos para você executar — 1 a 3 conteúdos por dia, conforme sua estratégia.</p><button className="btn primary" onClick={analyze} disabled={analyzing} style={{marginTop:18}}>{analyzing?"Analisando seu perfil...":hasOldStrategy?"Atualizar minha estratégia →":"Montar minha estratégia →"}</button></div>}
 function Home({ai,name,drafts,onWeek}:{ai:AIProfile;name:string;drafts:Draft[];onWeek:()=>void}){
  const dayIndex=Math.min(Math.max((new Date().getDay()+6)%7,0),(ai.weeklyPlan?.length||1)-1);
  const today=ai.weeklyPlan?.[dayIndex]||ai.weeklyPlan?.[0];
@@ -148,15 +148,22 @@ function Week({ai,trial,drafts,onDraftChange}:{ai:AIProfile;trial:boolean;drafts
  </div>
 }
 function ContentWorkspace({slot,day,draft,onDraftChange,onClose}:{slot:Slot;day:string;draft?:Draft;onDraftChange:(d:Draft)=>void;onClose:()=>void}){
- const [busy,setBusy]=useState(false); const [copied,setCopied]=useState("");
- const fields=[["Gancho",slot.hook],["Roteiro",slot.script],["Legenda",slot.caption],["CTA",slot.cta],["Visual",slot.visualDirection]];
+ const [busy,setBusy]=useState(false); const [copied,setCopied]=useState(""); const [current,setCurrent]=useState<Slot>(slot);
+ const fields=[["Gancho",current.hook],["Roteiro",current.script],["Legenda",current.caption],["CTA",current.cta],["Visual",current.visualDirection]];
  async function copy(label:string,value:string){await navigator.clipboard?.writeText(value||"");setCopied(label);setTimeout(()=>setCopied(""),1200)}
- async function status(next:"APPROVED"|"PUBLISHED"|"DRAFT"){if(!draft)return;setBusy(true);try{const r=await fetch("/api/content-drafts",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:draft.id,status:next})});const x=await r.json();if(r.ok&&x.draft)onDraftChange(x.draft)}finally{setBusy(false)}}
+ async function status(next:"APPROVED"|"PUBLISHED"){if(!draft)return;setBusy(true);try{const r=await fetch("/api/content-drafts",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:draft.id,status:next})});const x=await r.json();if(r.ok&&x.draft)onDraftChange(x.draft)}finally{setBusy(false)}}
+ async function redo(){setBusy(true);try{
+   const r=await fetch("/api/ai/refine-content",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:"refine",format:current.format,idea:current,message:"Refaça este post mantendo o objetivo, mas crie uma nova versão mais forte e diferente."})});
+   const x=await r.json(); if(!r.ok)throw new Error(x.error||"Não foi possível refazer.");
+   const next={...current,title:x.result.title,format:x.result.format,objective:x.result.objective,hook:x.result.hook,script:x.result.script,caption:x.result.caption,visualDirection:x.result.visualDirection,cta:x.result.cta,executionSteps:x.result.executionSteps||[]};
+   setCurrent(next);
+   if(draft){const u=await fetch("/api/content-drafts",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:draft.id,status:"DRAFT",title:next.title,format:next.format,objective:next.objective,hook:next.hook,script:next.script,caption:next.caption,visualDirection:next.visualDirection,cta:next.cta,conversationHistory:next.executionSteps})});const y=await u.json();if(u.ok&&y.draft)onDraftChange(y.draft)}
+ }catch(e){alert(e instanceof Error?e.message:"Não foi possível refazer o post.")}finally{setBusy(false)}}
  const all=fields.map(([label,value])=>`${label}: ${value||""}`).join("\n\n");
- return <div className="feature contentWorkspace"><div className="row-between"><div><div className="badge">{day} · {slot.time} · {slot.format}</div><h2 style={{marginTop:10}}>{slot.title}</h2><p className="small muted" style={{marginTop:5}}>Objetivo: {slot.objective}</p></div><button className="btn secondary" onClick={onClose}>Fechar</button></div>
+ return <div className="feature contentWorkspace"><div className="row-between"><div><div className="badge">{day} · {current.time} · {current.format}</div><h2 style={{marginTop:10}}>{current.title}</h2><p className="small muted" style={{marginTop:5}}>Objetivo: {current.objective}</p></div><button className="btn secondary" onClick={onClose}>Fechar</button></div>
   <div className="workspaceFields">{fields.map(([label,value])=><div className="workspaceField" key={label}><div className="row-between"><strong>{label}</strong><button className="copyBtn" onClick={()=>copy(label,value||"")}>{copied===label?"✓ Copiado":"Copiar"}</button></div><p style={{whiteSpace:"pre-line",lineHeight:1.6,marginTop:8}}>{value||"—"}</p></div>)}</div>
   <button className="btn secondary full" style={{marginTop:12}} onClick={()=>copy("all",all)}>{copied==="all"?"✓ Tudo copiado":"📋 Copiar tudo"}</button>
-  <div className="workspaceActions"><button className="btn secondary" onClick={()=>status("DRAFT")} disabled={busy}>Refazer este post</button><button className="btn primary" onClick={()=>status("PUBLISHED")} disabled={busy}>✓ Marcar como postado</button></div>
+  <div className="workspaceActions"><button className="btn secondary" onClick={redo} disabled={busy}>{busy?"Gerando...":"↻ Refazer este post"}</button><button className="btn primary" onClick={()=>status("PUBLISHED")} disabled={busy}>✓ Marcar como postado</button></div>
  </div>
 }
 function Diagnostic({ai,onAnalyze,analyzing}:{ai:AIProfile;onAnalyze:()=>void;analyzing:boolean}){
