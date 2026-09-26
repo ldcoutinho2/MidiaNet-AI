@@ -356,6 +356,9 @@ function Results({profile,onNewIdea}:{profile:Profile;onNewIdea:()=>void}){
  const previousPublicInteractions=previous?Number(previous.likes||0)+Number(previous.comments||0):null;
  const currentConversations=currentBusiness?Number(currentBusiness.instagramDms||0)+Number(currentBusiness.whatsappConversations||0):null;
  const previousConversations=previousBusiness?Number(previousBusiness.instagramDms||0)+Number(previousBusiness.whatsappConversations||0):null;
+ const funnelFollowerDelta=delta("followers");
+ const funnelInteractionDelta=publicInteractions!=null&&previousPublicInteractions!=null?publicInteractions-previousPublicInteractions:null;
+ const funnelConversationDelta=currentConversations!=null&&previousConversations!=null?currentConversations-previousConversations:null;
  const delta=(key:string)=>latest&&previous&&latest[key]!=null&&previous[key]!=null?Number(latest[key])-Number(previous[key]):null;
  const account=data?.account;
  const media=Array.isArray(account?.mediaCache)?account.mediaCache:[];
@@ -388,8 +391,8 @@ function Results({profile,onNewIdea}:{profile:Profile;onNewIdea:()=>void}){
       <div><b>04 · VENDA</b><strong>{currentBusiness?.salesCount!=null?Number(currentBusiness.salesCount).toLocaleString("pt-BR"):"Sem dado"}</strong><span>vendas registradas no dashboard</span></div>
     </div>
     <div className="small muted" style={{marginTop:10,display:"grid",gap:4}}>
-      <span>{latest?.followers!=null&&previous?.followers!=null?("Audiência: "+(delta("followers")>=0?"+":"")+delta("followers").toLocaleString("pt-BR")+" desde a última sincronização."):"Audiência: sincronize o Instagram para criar comparação."}</span>
-      <span>{publicInteractions!=null&&previousPublicInteractions!=null?("Interações públicas: "+((publicInteractions-previousPublicInteractions)>=0?"+":"")+(publicInteractions-previousPublicInteractions).toLocaleString("pt-BR")+" desde o último registro."):"Interações públicas: disponíveis após sincronização."}</span>
+      <span>{funnelFollowerDelta!=null?("Audiência: "+(funnelFollowerDelta>=0?"+":"")+funnelFollowerDelta.toLocaleString("pt-BR")+" desde a última sincronização."):"Audiência: sincronize o Instagram para criar comparação."}</span>
+      <span>{funnelInteractionDelta!=null?("Interações públicas: "+(funnelInteractionDelta>=0?"+":"")+funnelInteractionDelta.toLocaleString("pt-BR")+" desde o último registro."):"Interações públicas: disponíveis após sincronização."}</span>
       <span>{currentConversations!=null&&previousConversations!=null?("Conversas registradas: "+((currentConversations-previousConversations)>=0?"+":"")+(currentConversations-previousConversations).toLocaleString("pt-BR")+" desde o último lançamento."):"Conversas: registre DMs/WhatsApp no dashboard para acompanhar."}</span>
     </div>
     <p className="small muted" style={{marginTop:10}}>Os dados automáticos vêm do Instagram público. DMs, conversas e vendas vêm dos registros que você já faz no dashboard. “Sem dado” significa que ainda não existe registro.</p>
