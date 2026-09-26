@@ -349,8 +349,13 @@ function Results({profile,onNewIdea}:{profile:Profile;onNewIdea:()=>void}){
  useEffect(()=>{load()},[]);
  const ai:any=profile.aiProfile&&typeof profile.aiProfile==="object"?profile.aiProfile:null;
  const currentBusiness=Array.isArray(business?.snapshots)?business.snapshots[0]:null;
+ const previousBusiness=Array.isArray(business?.snapshots)?business.snapshots[1]:null;
  const snapshots=Array.isArray(data?.snapshots)?data.snapshots:[];
  const latest=data?.latest, previous=data?.previous;
+ const publicInteractions=latest?Number(latest.likes||0)+Number(latest.comments||0):null;
+ const previousPublicInteractions=previous?Number(previous.likes||0)+Number(previous.comments||0):null;
+ const currentConversations=currentBusiness?Number(currentBusiness.instagramDms||0)+Number(currentBusiness.whatsappConversations||0):null;
+ const previousConversations=previousBusiness?Number(previousBusiness.instagramDms||0)+Number(previousBusiness.whatsappConversations||0):null;
  const delta=(key:string)=>latest&&previous&&latest[key]!=null&&previous[key]!=null?Number(latest[key])-Number(previous[key]):null;
  const account=data?.account;
  const media=Array.isArray(account?.mediaCache)?account.mediaCache:[];
@@ -377,12 +382,17 @@ function Results({profile,onNewIdea}:{profile:Profile;onNewIdea:()=>void}){
     <div className="badge">🔎 FUNIL DO PERFIL</div><h2 style={{marginTop:10}}>De atenção até resultado</h2>
     <p className="muted" style={{marginTop:6}}>Não olhe só para curtidas. Cada etapa responde uma pergunta diferente.</p>
     <div className="resultsFunnelGrid">
-      <div><b>01 · ATENÇÃO</b><strong>{latest?.reach!=null?Number(latest.reach).toLocaleString("pt-BR"):"Sem dado"}</strong><span>alcance disponível</span></div>
-      <div><b>02 · INTERESSE</b><strong>{latest?.views!=null?Number(latest.views).toLocaleString("pt-BR"):"Sem dado"}</strong><span>visualizações disponíveis</span></div>
-      <div><b>03 · CONVERSA</b><strong>{currentBusiness?.instagramDms!=null?Number(currentBusiness.instagramDms).toLocaleString("pt-BR"):"Sem dado"}</strong><span>DMs registradas</span></div>
-      <div><b>04 · VENDA</b><strong>{currentBusiness?.salesCount!=null?Number(currentBusiness.salesCount).toLocaleString("pt-BR"):"Sem dado"}</strong><span>vendas registradas</span></div>
+      <div><b>01 · ATENÇÃO</b><strong>{latest?.followers!=null?Number(latest.followers).toLocaleString("pt-BR"):"Sem dado"}</strong><span>seguidores no último registro</span></div>
+      <div><b>02 · INTERESSE</b><strong>{publicInteractions!=null?publicInteractions.toLocaleString("pt-BR"):"Sem dado"}</strong><span>curtidas + comentários públicos</span></div>
+      <div><b>03 · CONVERSA</b><strong>{currentConversations!=null?currentConversations.toLocaleString("pt-BR"):"Sem dado"}</strong><span>Instagram + WhatsApp registrados</span></div>
+      <div><b>04 · VENDA</b><strong>{currentBusiness?.salesCount!=null?Number(currentBusiness.salesCount).toLocaleString("pt-BR"):"Sem dado"}</strong><span>vendas registradas no dashboard</span></div>
     </div>
-    <p className="small muted" style={{marginTop:10}}>“Sem dado” é diferente de zero: o MidiaNet não deve inventar uma métrica que o Instagram público não fornece.</p>
+    <div className="small muted" style={{marginTop:10,display:"grid",gap:4}}>
+      <span>{latest?.followers!=null&&previous?.followers!=null?("Audiência: "+(delta("followers")>=0?"+":"")+delta("followers").toLocaleString("pt-BR")+" desde a última sincronização."):"Audiência: sincronize o Instagram para criar comparação."}</span>
+      <span>{publicInteractions!=null&&previousPublicInteractions!=null?("Interações públicas: "+((publicInteractions-previousPublicInteractions)>=0?"+":"")+(publicInteractions-previousPublicInteractions).toLocaleString("pt-BR")+" desde o último registro."):"Interações públicas: disponíveis após sincronização."}</span>
+      <span>{currentConversations!=null&&previousConversations!=null?("Conversas registradas: "+((currentConversations-previousConversations)>=0?"+":"")+(currentConversations-previousConversations).toLocaleString("pt-BR")+" desde o último lançamento."):"Conversas: registre DMs/WhatsApp no dashboard para acompanhar."}</span>
+    </div>
+    <p className="small muted" style={{marginTop:10}}>Os dados automáticos vêm do Instagram público. DMs, conversas e vendas vêm dos registros que você já faz no dashboard. “Sem dado” significa que ainda não existe registro.</p>
   </div>
   {!data?.connected&&<div className="feature" style={{marginTop:14}}><h3>📸 Conecte seu Instagram</h3><p className="muted" style={{marginTop:6}}>Sem a conta conectada, você ainda pode registrar WhatsApp e vendas manualmente.</p></div>}
   {data?.connected&&<div className="feature" style={{marginTop:14}}><div className="row-between"><div><div className="badge">📊 COMPARAÇÃO</div><h2 style={{marginTop:10}}>@{account?.username||"perfil"}</h2></div><span className="small muted">{snapshots.length} registros</span></div>
