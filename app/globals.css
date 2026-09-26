@@ -164,3 +164,6 @@
 .resultsFunnelGrid span{font-size:11px;color:rgba(255,255,255,.55)}
 @media(max-width:760px){.resultsDecisionGrid,.resultsFunnelGrid{grid-template-columns:1fr 1fr}}
 @media(max-width:520px){.resultsDecisionGrid,.resultsFunnelGrid{grid-template-columns:1fr}}
+
+.strategyRefresh{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px;padding:15px}
+@media(max-width:600px){.strategyRefresh{flex-direction:column;align-items:stretch}}
