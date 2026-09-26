@@ -14,17 +14,18 @@ const schema = {
     bio: {
       type: "object", additionalProperties: false,
       properties: {
+        score: { type: "integer", minimum: 0, maximum: 100 },
         diagnosis: { type: "string" },
         impact: { type: "string" },
         recommendation: { type: "string" },
         suggestedBio: { type: "string" }
       },
-      required: ["diagnosis","impact","recommendation","suggestedBio"]
+      required: ["score","diagnosis","impact","recommendation","suggestedBio"]
     },
     profilePhoto: {
       type: "object", additionalProperties: false,
-      properties: { diagnosis:{type:"string"}, recommendation:{type:"string"} },
-      required:["diagnosis","recommendation"]
+      properties: { score:{type:"integer",minimum:0,maximum:100}, diagnosis:{type:"string"}, recommendation:{type:"string"} },
+      required:["score","diagnosis","recommendation"]
     },
     nameAndPositioning: {
       type: "object", additionalProperties: false,
@@ -44,18 +45,28 @@ const schema = {
     conversion: {
       type: "object", additionalProperties: false,
       properties: {
+        score:{type:"integer",minimum:0,maximum:100},
         diagnosis:{type:"string"},
         recommendation:{type:"string"},
         ctaSuggestion:{type:"string"}
       },
-      required:["diagnosis","recommendation","ctaSuggestion"]
+      required:["score","diagnosis","recommendation","ctaSuggestion"]
+    },
+    postingFrequency: {
+      type: "object", additionalProperties: false,
+      properties: {
+        score:{type:"integer",minimum:0,maximum:100},
+        diagnosis:{type:"string"},
+        recommendation:{type:"string"}
+      },
+      required:["score","diagnosis","recommendation"]
     },
     priorities: { type: "array", minItems:3, maxItems:5, items:{type:"string"} },
     limitations: { type: "array", items:{type:"string"} }
   },
   required: [
     "overallScore","summary","firstImpression","bio","profilePhoto",
-    "nameAndPositioning","highlights","grid","conversion","priorities","limitations"
+    "nameAndPositioning","highlights","grid","conversion","postingFrequency","priorities","limitations"
   ]
 } as const;
 
@@ -131,13 +142,13 @@ export async function POST() {
         "Você é o auditor de Instagram do MidiaNet AI.",
         "Faça somente a auditoria do perfil; não gere estratégia semanal, calendário ou conteúdo.",
         "Use primeiro os dados reais do bloco instagram. Não invente informações.",
-        "Analise bio, nome/posicionamento, foto de perfil, destaques, grade, primeira impressão e conversão.",
+        "Analise bio, nome/posicionamento, foto de perfil, destaques, grade/feed, frequência de postagem, primeira impressão e conversão.",
         "Quando uma imagem foi anexada, analise somente o que está realmente visível nela.",
         "Os conteúdos anexados são apenas uma amostra dos últimos conteúdos, não representam necessariamente toda a grade.",
         "Se não houver imagem suficiente para avaliar destaques ou a grade inteira, declare a limitação em vez de fingir que viu.",
         "Não inclua URLs, links, endereços de sites, referências de busca ou citações nos campos de texto.",
         "overallScore é apenas uma referência interna de 0 a 100 baseada nos dados disponíveis, não uma verdade objetiva.",
-        "Entregue recomendações práticas e uma sugestão de bio pronta.",
+        "Dê uma nota própria de 0 a 100 para cada critério: nome/@, foto, bio, destaques, grade/feed, frequência e conversão. Entregue recomendações práticas e uma sugestão de bio pronta.",
         "Responda exclusivamente no JSON estruturado solicitado."
       ].join("\n"),
       input: [{ role: "user", content: inputContent }],
