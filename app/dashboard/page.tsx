@@ -77,7 +77,7 @@ export default function Dashboard(){
  else if(tab==="week") panel=<Week ai={ai} trial={data.user.subscription?.status==="TRIALING"} drafts={drafts} onDraftChange={(d)=>setDrafts(v=>v.some(x=>x.id===d.id)?v.map(x=>x.id===d.id?d:x):[...v,d])}/>;
  else if(tab==="diagnostic") panel=<Diagnostic ai={ai} onAnalyze={auditProfile} analyzing={analyzing}/>;
  else if(tab==="results") panel=<Results profile={p}/>;
- else if(tab==="create") panel=<Create/>;
+ else if(tab==="create") panel=<Create ai={ai} drafts={drafts} onDraftChange={(d)=>setDrafts(v=>v.some(x=>x.id===d.id)?v.map(x=>x.id===d.id?d:x):[...v,d])}/>;
  else panel=<Account user={data.user} profile={p} router={router} entitlement={entitlement}/>;
 
  return <main className="page dashboardPage">
@@ -274,11 +274,30 @@ function Account({user,profile,router,entitlement}:{user:Me["user"];profile:Prof
   <div className="feature" style={{marginTop:14}}><div className="badge">💬 SUPORTE</div><h3 style={{marginTop:10}}>Precisa de ajuda?</h3><p className="muted" style={{marginTop:6}}>Fale com o suporte pelo WhatsApp.</p><a className="btn secondary" style={{display:"inline-block",marginTop:10}} href="https://wa.me/?text=Oi! Preciso de ajuda com o MidiaNet AI." target="_blank" rel="noreferrer">Falar com suporte →</a></div>
  </div>
 }
-function Create(){
+function Create({ai,drafts,onDraftChange}:{ai:AIProfile;drafts:Draft[];onDraftChange:(d:Draft)=>void}){
  const [idea,setIdea]=useState(""); const [loading,setLoading]=useState(false); const [saving,setSaving]=useState<number|null>(null); const [options,setOptions]=useState<any[]>([]); const [error,setError]=useState("");
+ const [dayIndex,setDayIndex]=useState(0); const [slotIndex,setSlotIndex]=useState(0);
+ const selectedDay=ai.weeklyPlan?.[dayIndex]||ai.weeklyPlan?.[0]; const selectedSlot=selectedDay?.slots?.[slotIndex]||selectedDay?.slots?.[0];
+ useEffect(()=>{setSlotIndex(0)},[dayIndex]);
  async function multiply(){if(!idea.trim())return;setLoading(true);setError("");try{const r=await fetch("/api/ai/multiply-idea",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({idea})});const x=await r.json();if(!r.ok){setError(x.error||"Não foi possível transformar a ideia.");return}setOptions(x.options||[])}catch{setError("Não foi possível conectar à IA.")}finally{setLoading(false)}}
- async function addToWeek(o:any,i:number){setSaving(i);try{const r=await fetch("/api/content-drafts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({format:o.format,role:"Nova ideia",objective:o.objective,title:o.title,topic:idea,hook:o.hook,script:o.script,caption:o.caption,visualDirection:o.direction,cta:o.cta,executionSteps:o.executionSteps})});const x=await r.json();if(!r.ok){setError(x.error||"Não foi possível salvar.");return}setOptions(v=>v.filter((_,idx)=>idx!==i))}catch{setError("Não foi possível salvar a ideia.")}finally{setSaving(null)}}
- return <div style={{marginTop:8}}><div className="feature"><div className="badge">✨ NOVA IDEIA</div><h2 style={{marginTop:10}}>Você traz a ideia. A IA encontra 3 formatos.</h2><p className="muted" style={{marginTop:7}}>Digite do seu jeito. O MidiaNet transforma a mesma ideia em Reel, Carrossel e Story.</p><textarea value={idea} onChange={e=>setIdea(e.target.value)} placeholder="Ex.: quero falar sobre os erros que pequenos negócios cometem no Instagram..." style={{marginTop:16,minHeight:130}}/><button className="btn primary" style={{marginTop:12}} onClick={multiply} disabled={loading}>{loading?"Criando 3 formatos...":"🚀 Transformar minha ideia"}</button>{error&&<p className="small" style={{color:"#fda4af",marginTop:10}}>{error}</p>}</div>
- {options.length>0&&<div style={{marginTop:18}}><h2>Escolha um formato</h2><div style={{display:"grid",gap:12,marginTop:12}}>{options.map((o,i)=><div className="card" key={i}><div className="row-between"><span className="badge">{i+1} · {o.format}</span><span className="small muted">{o.angle}</span></div><h3 style={{marginTop:10}}>{o.title}</h3><p style={{marginTop:8}}><strong>🪝 {o.hook}</strong></p><div className="small muted" style={{marginTop:8}}><strong>Roteiro:</strong> {o.script}</div><div className="small muted" style={{marginTop:8}}><strong>Legenda:</strong> {o.caption}</div><div className="small" style={{marginTop:8}}>CTA: {o.cta}</div><button className="btn primary" style={{marginTop:12}} onClick={()=>addToWeek(o,i)} disabled={saving===i}>{saving===i?"Salvando...":"＋ Adicionar à minha semana"}</button></div>)}</div></div>}
+ async function addToWeek(o:any,i:number){
+   if(!selectedDay||!selectedSlot){setError("Escolha um dia e um horário.");return}
+   setSaving(i);setError("");
+   try{
+     const slotKey=`${dayIndex}:${slotIndex}`;
+     const existing=drafts.find(d=>d.slotKey===slotKey);
+     const payload={status:"DRAFT",slotKey,dayLabel:selectedDay.day,timeLabel:selectedSlot.time,format:o.format,role:"Nova ideia",objective:o.objective,title:o.title,topic:idea,hook:o.hook,script:o.script,caption:o.caption,visualDirection:o.direction,cta:o.cta,conversationHistory:Array.isArray(o.executionSteps)?o.executionSteps:[]};
+     const r=await fetch("/api/content-drafts",{method:existing?"PATCH":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(existing?{id:existing.id,...payload}:payload)});
+     const x=await r.json();
+     if(!r.ok){setError(x.error||"Não foi possível adicionar à semana.");return}
+     if(x.draft)onDraftChange(x.draft);
+     setOptions(v=>v.filter((_,idx)=>idx!==i));setIdea("");
+   }catch{setError("Não foi possível salvar a ideia.")}finally{setSaving(null)}
+ }
+ return <div style={{marginTop:8}}>
+  <div className="feature"><div className="badge">✨ NOVA IDEIA</div><h2 style={{marginTop:10}}>Você traz a ideia. A IA encontra 3 formatos.</h2><p className="muted" style={{marginTop:7}}>Digite do seu jeito, escolha o formato e coloque o conteúdo direto em um dia da sua semana.</p><textarea value={idea} onChange={e=>setIdea(e.target.value)} placeholder="Ex.: quero falar sobre os erros que pequenos negócios cometem no Instagram..." style={{marginTop:16,minHeight:130}}/><button className="btn primary" style={{marginTop:12}} onClick={multiply} disabled={loading}>{loading?"Criando 3 formatos...":"🚀 Transformar minha ideia"}</button>{error&&<p className="small" style={{color:"#fda4af",marginTop:10}}>{error}</p>}</div>
+  {options.length>0&&<div style={{marginTop:18}}><div className="feature"><div className="badge">📅 ONDE PUBLICAR?</div><h2 style={{marginTop:10}}>Escolha o dia e o horário</h2><div className="dayTabs" style={{marginTop:12}}>{ai.weeklyPlan.map((d,i)=><button key={i} className={i===dayIndex?"active":""} onClick={()=>setDayIndex(i)}>{d.day.slice(0,3)}</button>)}</div><select value={slotIndex} onChange={e=>setSlotIndex(Number(e.target.value))} style={{marginTop:12}}>{selectedDay?.slots?.map((s,j)=><option key={j} value={j}>{s.time} · {s.format} · {s.title}</option>)}</select><p className="small muted" style={{marginTop:8}}>A ideia escolhida substituirá o conteúdo desse horário na sua semana.</p></div>
+   <h2 style={{marginTop:20}}>Escolha um formato</h2><div style={{display:"grid",gap:12,marginTop:12}}>{options.map((o,i)=><div className="card" key={i}><div className="row-between"><span className="badge">{i+1} · {o.format}</span><span className="small muted">{o.angle}</span></div><h3 style={{marginTop:10}}>{o.title}</h3><p style={{marginTop:8}}><strong>🪝 {o.hook}</strong></p><div className="small muted" style={{marginTop:8}}><strong>Roteiro:</strong> {o.script}</div><div className="small muted" style={{marginTop:8}}><strong>Legenda:</strong> {o.caption}</div><div className="small" style={{marginTop:8}}>CTA: {o.cta}</div><button className="btn primary" style={{marginTop:12}} onClick={()=>addToWeek(o,i)} disabled={saving===i}>{saving===i?"Salvando na semana...":"＋ Adicionar à minha semana"}</button></div>)}</div>
+  </div>}
  </div>
 }
