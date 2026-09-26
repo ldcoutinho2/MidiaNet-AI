@@ -120,8 +120,10 @@ function Home({ai,name,drafts,onWeek,onOpenToday}:{ai:AIProfile;name:string;draf
  const today=ai.weeklyPlan?.[dayIndex]||ai.weeklyPlan?.[0];
  const actions=today?.slots||[];
  const score=ai.profileAudit?.overallScore;
+ const totalContent=(ai.weeklyPlan||[]).reduce((n,d)=>n+(d.slots?.length||0),0);
+ const publishedContent=drafts.filter(d=>d.status==="PUBLISHED"&&d.slotKey).length;
+ const progress=totalContent?Math.min(100,Math.round((publishedContent/totalContent)*100)):0;
  const completedDays=new Set(drafts.filter(d=>d.status==="PUBLISHED"&&d.slotKey).map(d=>String(d.slotKey).split(":")[0])).size;
- const progress=Math.min(100,Math.round((completedDays/7)*100));
  return <div className="todayPage">
    <div className="todayHeader">
      <div><div className="badge">HOJE</div><h1>Olá, {name} 👋</h1><p className="muted">Você não precisa decidir o que postar. Seu próximo passo está aqui.</p></div>
@@ -133,7 +135,7 @@ function Home({ai,name,drafts,onWeek,onOpenToday}:{ai:AIProfile;name:string;draf
      <div className="todayContentList">{actions.map((s,i)=>{const draft=drafts.find(d=>d.slotKey===`${dayIndex}:${i}`);const posted=draft?.status==="PUBLISHED";return <button className="todayContentItem" key={i} onClick={()=>onOpenToday(dayIndex,i)}><span className="todayTime">{s.time}</span><span className="todayFormat">{fmtIcon[s.format]||"✨"} {s.format}</span><strong>{s.title}</strong><span className="todayArrow">{posted?"✓":"→"}</span></button>})}</div>
      <button className="btn primary full" style={{marginTop:12}} onClick={onWeek}>Abrir conteúdo de hoje →</button>
    </div>
-   <div className="weekProgressCard feature"><div className="row-between"><strong>📅 Progresso da semana</strong><span>{completedDays} de 7 dias concluídos</span></div><div className="weekTrack"><i style={{width:`${progress}%`}}/></div><p className="small muted" style={{marginTop:7}}>Marque os conteúdos como postados dentro de cada publicação.</p></div>
+   <div className="weekProgressCard feature"><div className="row-between"><strong>📅 Progresso da semana</strong><span>{publishedContent} de {totalContent} conteúdos publicados</span></div><div className="weekTrack"><i style={{width:`${progress}%`}}/></div><p className="small muted" style={{marginTop:7}}>Cada ✓ significa que aquele conteúdo já foi publicado.</p></div>
    <div className="feature quickFix"><div className="badge">🛠️ Corrija em 5 minutos</div><h2 style={{marginTop:10}}>Comece por estas 3 correções</h2><div className="quickFixList">{(ai.profileAudit?.priorities||["Revise sua bio","Deixe seu CTA mais claro","Escolha um tema principal para a semana"]).slice(0,3).map((x,i)=><div className="card" key={i}><b>{i+1}.</b> {x}</div>)}</div></div>
  </div>
 }
