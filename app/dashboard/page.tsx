@@ -166,6 +166,13 @@ function Diagnostic({ai,onAnalyze,analyzing}:{ai:AIProfile;onAnalyze:()=>void;an
    <div id="strategy" style={{marginTop:30}}><Strategy ai={ai}/></div>
  </div>
 }
+function Strategy({ai}:{ai:AIProfile}){
+ const plan=Array.isArray(ai.thirtyDayPlan)?ai.thirtyDayPlan:[];
+ return <div style={{marginTop:8}}>
+  <div className="feature"><div className="badge">🎯 ESTRATÉGIA</div><h2 style={{marginTop:10}}>Seu direcionamento em poucas frases</h2><div className="strategyGrid" style={{marginTop:14}}><div className="card"><small className="muted">POSICIONAMENTO</small><p style={{marginTop:7}}>{ai.positioning}</p></div><div className="card"><small className="muted">PÚBLICO</small><p style={{marginTop:7}}>{ai.audience}</p></div><div className="card"><small className="muted">COMO CONVERTER</small><p style={{marginTop:7}}>{ai.conversionStrategy}</p></div><div className="card"><small className="muted">PRÓXIMO PASSO</small><p style={{marginTop:7}}>{ai.nextAction}</p></div></div></div>
+  <div className="feature" style={{marginTop:14}}><div className="badge">📅 PLANO DE 30 DIAS</div><div className="strategyGrid" style={{marginTop:14}}>{plan.slice(0,4).map((x:any,i:number)=><div className="card" key={i}><small className="muted">FASE {i+1}</small><h3 style={{marginTop:7}}>{x.phase||x.title||("Semana "+(i+1))}</h3><p className="small muted" style={{marginTop:6}}>{x.focus||x.description||x.objective||""}</p></div>)}</div></div>
+ </div>
+}
 function Audit({audit,onAnalyze,analyzing}:{audit?:ProfileAudit;onAnalyze:()=>void;analyzing:boolean}){
  if(!audit) return <div className="feature" style={{marginTop:22}}><div className="badge">🔍 Auditoria do perfil</div><h2 style={{marginTop:12}}>Vamos analisar seu Instagram.</h2><p className="muted" style={{marginTop:8}}>A análise usa os dados sincronizados do perfil e os conteúdos públicos disponíveis.</p><button className="btn primary" style={{marginTop:16}} onClick={onAnalyze} disabled={analyzing}>{analyzing?"Analisando perfil...":"🔍 Fazer auditoria agora"}</button></div>;
  const items=[
