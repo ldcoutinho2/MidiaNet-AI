@@ -145,7 +145,7 @@ export async function POST() {
   try {
     const entitlement = await getEntitlement(user.id);
     if (!entitlement.active) return NextResponse.json({ error: "Seu teste terminou. Escolha um plano para continuar." }, { status: 402 });
-    const consumption = await consumeContentGeneration(user.id);
+    const consumption = await consumeContentGeneration(user.id, { dryRun: true });
     if (!consumption.ok) return NextResponse.json({ error: consumption.error }, { status: 402 });
     const instagramAccount = user.socialAccounts[0] || null;
     const instagramReference = profile.instagramProfileUrl
