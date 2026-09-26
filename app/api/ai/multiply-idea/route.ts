@@ -19,9 +19,13 @@ const schema = {
           title: { type: "string" },
           hook: { type: "string" },
           objective: { type: "string" },
-          direction: { type: "string" }
+          script: { type: "string" },
+          caption: { type: "string" },
+          cta: { type: "string" },
+          direction: { type: "string" },
+          executionSteps: { type: "array", items: { type: "string" } }
         },
-        required: ["format","angle","title","hook","objective","direction"]
+        required: ["format","angle","title","hook","objective","script","caption","cta","direction","executionSteps"]
       }
     }
   },
@@ -45,13 +49,13 @@ export async function POST(request: Request) {
       model: "gpt-5.6-luna",
       instructions: [
         "Você é o multiplicador de ideias do MidiaNet AI.",
-        "O usuário traz UMA ideia. Você deve encontrar exatamente 5 formas diferentes de transformá-la em conteúdo.",
+        "O usuário traz UMA ideia. Transforme-a em exatamente 3 formatos: Reel, Carrossel e Story.",
         "Não substitua a ideia central por outra. Expanda a mesma ideia por ângulos diferentes.",
-        "Use cinco caminhos diferentes quando fizer sentido: educação, autoridade, conexão, entretenimento/alcance e conversão.",
+        "Cada formato deve ser completo e diferente, mantendo a mesma ideia central.",
         "Evite cinco variações quase iguais.",
         "Considere o nicho, público, objetivo, posicionamento e oferta do usuário.",
         "Não invente fatos, resultados, depoimentos, preços ou provas.",
-        "Cada opção deve ser suficientemente concreta para o usuário escolher e depois transformar em conteúdo completo.",
+        "Para cada opção entregue gancho, roteiro, legenda, CTA, direção visual e passos de execução prontos para publicar.",
         "Responda exclusivamente no JSON estruturado solicitado."
       ].join("\n"),
       input: [{
