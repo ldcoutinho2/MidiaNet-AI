@@ -10,6 +10,7 @@ type AuditItem = {score:number;diagnosis:string;recommendation:string};
 type ProfileAudit = { overallScore:number; summary:string; firstImpression:string; bio:AuditItem&{impact:string;suggestedBio:string}; profilePhoto:AuditItem; nameAndPositioning:AuditItem; highlights:AuditItem; grid:AuditItem; postingFrequency:AuditItem; conversion:AuditItem&{ctaSuggestion:string}; priorities:string[]; limitations:string[] };
 type AIProfile = { objective:string; currentStage:string; diagnosis:string; mainProblem:string; strategy:string; weeklyMission:string; nextAction:string; postingFrequency:string; postingFrequencyReason:string; weeklyContentCount:number; dailyContentCount:string; positioning:string; audience:string; conversionStrategy:string; contentPillars:string[]; tone:string[]; strengths:string[]; opportunities:string[]; thirtyDayPlan:{phase:string;focus:string;action:string;expectedSignal:string}[]; weeklyPlan:DayPlan[]; profileAudit?:ProfileAudit };
 type Profile = Record<string,any> & { aiProfile?:AIProfile|null; aiAnalyzedAt?:string|null };
+type Entitlement = {contentRemaining:number;contentLimit:number;imageRemaining:number;imageLimit:number;contentUsed:number;imageUsed:number;};
 type Me = { user:{name:string|null;email:string;phone?:string|null;strategicProfile:Profile|null;subscription?:any|null;socialAccounts?:{id:string;platform:string;username:string|null;fullName?:string|null;biography?:string|null;website?:string|null;profilePictureUrl?:string|null;followersCount?:number|null;followsCount?:number|null;mediaCount?:number|null;lastSyncedAt?:string|null;connectedAt:string}[]} };
 
 const tabs=[
@@ -24,7 +25,7 @@ export default function Dashboard(){
  const [loading,setLoading]=useState(true);
  const [tab,setTab]=useState("home");
  const [analyzing,setAnalyzing]=useState(false);
- const [error,setError]=useState("");
+ const [error,setError]=useState(""); const [entitlement,setEntitlement]=useState<Entitlement|null>(null);
 
  useEffect(()=>{
    fetch("/api/auth/me").then(async r=>{
@@ -34,7 +35,7 @@ export default function Dashboard(){
      if(x){
        if(!x.user.strategicProfile?.onboardingCompletedAt){router.replace("/setup");return}
        setData(x);
-       fetch("/api/content-drafts").then(r=>r.ok?r.json():null).then(v=>{if(v?.drafts)setDrafts(v.drafts)}).catch(()=>{})
+       fetch("/api/content-drafts").then(r=>r.ok?r.json():null).then(v=>{if(v?.drafts)setDrafts(v.drafts)}).catch(()=>{}); fetch("/api/entitlements").then(r=>r.ok?r.json():null).then(v=>{if(v?.entitlement)setEntitlement(v.entitlement)}).catch(()=>{})
      }
    }).finally(()=>setLoading(false))
  },[router]);
@@ -77,7 +78,7 @@ export default function Dashboard(){
  else if(tab==="diagnostic") panel=<Diagnostic ai={ai} onAnalyze={auditProfile} analyzing={analyzing}/>;
  else if(tab==="results") panel=<Results profile={p}/>;
  else if(tab==="create") panel=<Create/>;
- else panel=<Account user={data.user} profile={p} router={router}/>;
+ else panel=<Account user={data.user} profile={p} router={router} entitlement={entitlement}/>;
 
  return <main className="page dashboardPage">
    <nav className="nav dashboardNav">
@@ -200,6 +201,20 @@ function Results({profile}:{profile:Profile}){
   {syncError&&<p className="small" style={{color:"#fda4af",marginTop:10}}>{syncError}</p>}
   <div className="feature" style={{marginTop:14}}><div className="badge">💬 WHATSAPP + VENDAS</div><h2 style={{marginTop:10}}>Registre o resultado da semana</h2><p className="muted" style={{marginTop:7}}>Esses números ajudam o MidiaNet a entender se o conteúdo está virando conversa, lead e venda.</p><div className="metricForm"><MetricInput label="DMs recebidas no Instagram" value={form.instagramDms} onChange={v=>setForm({...form,instagramDms:v})}/><MetricInput label="Leads pelo Instagram" value={form.instagramLeads} onChange={v=>setForm({...form,instagramLeads:v})}/><MetricInput label="Vendas pelo Instagram" value={form.instagramSales} onChange={v=>setForm({...form,instagramSales:v})}/><MetricInput label="Conversas no WhatsApp" value={form.whatsappConversations} onChange={v=>setForm({...form,whatsappConversations:v})}/><MetricInput label="Leads no WhatsApp" value={form.whatsappLeads} onChange={v=>setForm({...form,whatsappLeads:v})}/><MetricInput label="Vendas pelo WhatsApp" value={form.whatsappSales} onChange={v=>setForm({...form,whatsappSales:v})}/><MetricInput label="Vendas fechadas" value={form.salesCount} onChange={v=>setForm({...form,salesCount:v})}/><MetricInput label="Faturamento (R$)" value={form.revenue} onChange={v=>setForm({...form,revenue:v})}/></div><button className="btn primary" style={{marginTop:14}} onClick={saveBusiness} disabled={saving}>{saving?"Salvando...":"💾 Salvar resultados"}</button>{saved&&<span className="small savedMsg">✓ Registrado</span>}</div>
   <div className="feature" style={{marginTop:14}}><h2>📋 Histórico de conversão</h2>{business?.snapshots?.length?<div style={{marginTop:12,display:"grid",gap:8}}>{business.snapshots.map((x:any)=><div className="card" key={x.id}><div className="row-between"><strong>{new Date(x.capturedAt).toLocaleDateString("pt-BR")}</strong><span className="small muted">{x.salesCount} vendas · R$ {Number(x.revenue||0).toFixed(2)}</span></div><p className="small muted" style={{marginTop:6}}>Instagram: {x.instagramDms} DMs · {x.instagramLeads} leads · {x.instagramSales} vendas · WhatsApp: {x.whatsappConversations} conversas · {x.whatsappLeads} leads · {x.whatsappSales} vendas</p></div>)}</div>:<p className="muted" style={{marginTop:8}}>Ainda não há registros manuais.</p>}</div>
+ </div>
+}
+function Account({user,profile,router,entitlement}:{user:Me["user"];profile:Profile;router:ReturnType<typeof useRouter>;entitlement:Entitlement|null}){
+ const subscription=user.subscription;
+ const end=subscription?.currentPeriodEnd?new Date(subscription.currentPeriodEnd):null;
+ const trialEnd=subscription?.trialEndsAt?new Date(subscription.trialEndsAt):null;
+ const days=trialEnd?Math.max(0,Math.ceil((trialEnd.getTime()-Date.now())/86400000)):0;
+ return <div style={{marginTop:8}}>
+  <div className="feature accountHero"><div><div className="badge">CONTA</div><h2 style={{marginTop:10}}>{profile.niche||"Seu negócio"}</h2><p className="muted" style={{marginTop:6}}>{profile.offer||"Seu posicionamento e oferta aparecem aqui."}</p></div><button className="btn secondary" onClick={()=>router.push("/setup")}>Editar perfil</button></div>
+  <div className="feature" style={{marginTop:14}}><div className="badge">💳 PLANO ATUAL</div><h2 style={{marginTop:10}}>{subscription?.status==="TRIALING"?"Teste gratuito ativo":"Acesso ativo"}</h2><p className="muted" style={{marginTop:6}}>{subscription?.status==="TRIALING"?`Seu teste vence em ${days} dia(s).`:end?`Seu plano vence em ${Math.max(0,Math.ceil((end.getTime()-Date.now())/86400000))} dia(s), em ${end.toLocaleDateString("pt-BR")}.`:"Escolha um plano para continuar."}</p><button className="btn primary" style={{marginTop:12}} onClick={()=>router.push("/checkout?plan=monthly")}>Renovar por Pix →</button></div>
+  <div className="feature" style={{marginTop:14}}><div className="badge">🧠 USO DE IA</div><h3 style={{marginTop:10}}>Gerações restantes</h3><div className="grid2" style={{marginTop:10}}><div className="card"><small className="muted">CONTEÚDO</small><strong style={{fontSize:25,display:"block",marginTop:5}}>{entitlement?.contentRemaining??"—"}</strong><p className="small muted">de {entitlement?.contentLimit??"—"}</p></div><div className="card"><small className="muted">IMAGENS</small><strong style={{fontSize:25,display:"block",marginTop:5}}>{entitlement?.imageRemaining??"—"}</strong><p className="small muted">de {entitlement?.imageLimit??"—"}</p></div></div></div>
+  <div className="grid2" style={{marginTop:14}}><div className="card"><small className="muted">SEMANAL</small><strong style={{fontSize:30,display:"block",marginTop:7}}>R$ 14,99</strong><p className="small muted">7 dias de acesso completo.</p><button className="btn secondary full" style={{marginTop:10}} onClick={()=>router.push("/checkout?plan=weekly")}>Escolher semanal</button></div><div className="card"><small className="muted">MENSAL</small><strong style={{fontSize:30,display:"block",marginTop:7}}>R$ 29,99</strong><p className="small muted">30 dias de acesso completo.</p><button className="btn primary full" style={{marginTop:10}} onClick={()=>router.push("/checkout?plan=monthly")}>Escolher mensal</button></div></div>
+  <div className="feature" style={{marginTop:14}}><div className="badge">👤 SEU PERFIL</div><div className="profileGrid" style={{marginTop:14}}>{[["Instagram",profile.instagramProfileUrl],["Tipo de negócio",profile.businessType],["Nicho",profile.niche],["Oferta",profile.offer],["Objetivo",profile.objective],["Público",profile.audience],["Localização",profile.audienceLocation||profile.location],["Posicionamento",profile.desiredPositioning],["WhatsApp",user.phone],["Frequência",profile.postingFrequency]].map(([label,value])=><div className="card" key={label}><small className="muted">{label}</small><p style={{marginTop:6,whiteSpace:"pre-line"}}>{String(value||"—")}</p></div>)}</div><button className="btn secondary" style={{marginTop:14}} onClick={()=>router.push("/setup")}>Editar meus dados →</button></div>
+  <div className="feature" style={{marginTop:14}}><div className="badge">💬 SUPORTE</div><h3 style={{marginTop:10}}>Precisa de ajuda?</h3><p className="muted" style={{marginTop:6}}>Fale com o suporte pelo WhatsApp.</p><a className="btn secondary" style={{display:"inline-block",marginTop:10}} href="https://wa.me/?text=Oi! Preciso de ajuda com o MidiaNet AI." target="_blank" rel="noreferrer">Falar com suporte →</a></div>
  </div>
 }
 function Create(){
