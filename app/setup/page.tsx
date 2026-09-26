@@ -52,8 +52,14 @@ export default function SetupPage(){
  function next(){const m=validate();if(m){setError(m);return;}setError("");setStep(s=>Math.min(4,s+1));}
  async function finish(){
    setError(""); const m=validate(); if(m){setError(m);setStep(2);return;} setSaving(true);
-   try{const response=await fetch("/api/profile",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});
-   const data=await response.json(); if(!response.ok){setError(data.error||"Não foi possível salvar.");return;} router.replace("/dashboard");
+   try{
+     const response=await fetch("/api/profile",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});
+     const data=await response.json();
+     if(!response.ok){setError(data.error||"Não foi possível salvar.");return;}
+     setError("Analisando seu perfil e preparando seu primeiro post...");
+     const analysis=await fetch("/api/ai/analyze-profile",{method:"POST"});
+     if(!analysis.ok) console.warn("first_analysis_failed",await analysis.text());
+     router.replace("/dashboard");
    }catch{setError("Não foi possível conectar ao servidor.");}finally{setSaving(false);}
  }
  if(loading)return <main className="auth"><div className="authbox"><p className="muted">Preparando seu diagnóstico...</p></div></main>;
