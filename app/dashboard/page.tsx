@@ -147,6 +147,13 @@ function Week({ai,trial,drafts,onDraftChange}:{ai:AIProfile;trial:boolean;drafts
    {selected&&<ContentWorkspace slot={selected.slot} day={selected.day} draft={selected.draft} onDraftChange={onDraftChange} onClose={()=>setSelected(null)}/>}
  </div>
 }
+function Diagnostic({ai,onAnalyze,analyzing}:{ai:AIProfile;onAnalyze:()=>void;analyzing:boolean}){
+ return <div style={{marginTop:8}}>
+   <div className="diagnosticSwitch"><a href="#audit">Auditoria</a><a href="#strategy">Estratégia</a></div>
+   <div id="audit"><Audit audit={ai.profileAudit} onAnalyze={onAnalyze} analyzing={analyzing}/></div>
+   <div id="strategy" style={{marginTop:30}}><Strategy ai={ai}/></div>
+ </div>
+}
 function Audit({audit,onAnalyze,analyzing}:{audit?:ProfileAudit;onAnalyze:()=>void;analyzing:boolean}){
  if(!audit) return <div className="feature" style={{marginTop:22}}><div className="badge">🔍 Auditoria do perfil</div><h2 style={{marginTop:12}}>Vamos analisar seu Instagram.</h2><p className="muted" style={{marginTop:8}}>A análise usa os dados sincronizados do perfil e os conteúdos públicos disponíveis.</p><button className="btn primary" style={{marginTop:16}} onClick={onAnalyze} disabled={analyzing}>{analyzing?"Analisando perfil...":"🔍 Fazer auditoria agora"}</button></div>;
  const items=[
