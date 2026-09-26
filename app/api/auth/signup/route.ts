@@ -56,6 +56,23 @@ export async function POST(request: Request) {
 
     await createSession(user.id);
 
+    await db.event.create({
+      data: {
+        name: "signup_completed",
+        occurredAt: new Date(),
+        userId: user.id,
+        metadata: { source: "signup" },
+      },
+    });
+    await db.event.create({
+      data: {
+        name: "trial_started",
+        occurredAt: new Date(),
+        userId: user.id,
+        metadata: { plan: "TRIAL_2_DAYS", days: 2 },
+      },
+    });
+
     return NextResponse.json({ ok: true, userId: user.id });
   } catch (error) {
     console.error("signup_error", error);
