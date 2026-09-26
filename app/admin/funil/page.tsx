@@ -44,6 +44,7 @@ export default function AdminFunnelPage() {
   useEffect(() => { load(); }, [days]);
 
   const rows = data?.funnel || [];
+  const campaigns = data?.campaigns || [];
   const rates = useMemo(() => rows.map((row:any, i:number) => ({
     ...row,
     nextRate: i === 0 || !rows[i - 1]?.count ? null : Math.round((row.count / rows[i - 1].count) * 100),
@@ -89,6 +90,37 @@ export default function AdminFunnelPage() {
             ))}
           </div>
           <p className="small muted" style={{marginTop:14}}>A taxa é calculada entre eventos, enquanto “usuários únicos” usa os usuários autenticados quando disponíveis.</p>
+        </div>}
+
+        {!loading && !error && <div className="feature" style={{marginTop:18}}>
+          <div className="row-between">
+            <div>
+              <div className="badge">ATRIBUIÇÃO · UTM</div>
+              <h2 style={{marginTop:10}}>Qual campanha está gerando dinheiro?</h2>
+            </div>
+          </div>
+          <div style={{overflowX:"auto", marginTop:16}}>
+            <table style={{width:"100%", borderCollapse:"collapse", minWidth:760}}>
+              <thead><tr>
+                {["Campanha","Visitas","Cadastros","Diagnósticos","Pix","Pagamentos","Receita"].map((h)=><th key={h} style={{textAlign:"left",padding:"10px 8px",borderBottom:"1px solid rgba(255,255,255,.1)"}}>{h}</th>)}
+              </tr></thead>
+              <tbody>
+                {campaigns.map((row:any)=>(
+                  <tr key={row.campaign}>
+                    <td style={{padding:"12px 8px"}}><strong>{row.campaign}</strong></td>
+                    <td style={{padding:"12px 8px"}}>{row.visits}</td>
+                    <td style={{padding:"12px 8px"}}>{row.signups}</td>
+                    <td style={{padding:"12px 8px"}}>{row.diagnostics}</td>
+                    <td style={{padding:"12px 8px"}}>{row.pix}</td>
+                    <td style={{padding:"12px 8px"}}>{row.payments}</td>
+                    <td style={{padding:"12px 8px"}}><strong>R$ {Number(row.revenue || 0).toFixed(2).replace(".", ",")}</strong></td>
+                  </tr>
+                ))}
+                {!campaigns.length && <tr><td colSpan={7} className="muted" style={{padding:16}}>Ainda não há eventos com atribuição neste período.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+          <p className="small muted" style={{marginTop:14}}>A receita vem dos pagamentos marcados como PAID. Quando o comprador está autenticado, o pagamento é atribuído à primeira origem UTM registrada para aquele usuário.</p>
         </div>}
       </section>
     </main>
