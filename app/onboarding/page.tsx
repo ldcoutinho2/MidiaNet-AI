@@ -32,6 +32,11 @@ export default function Onboarding() {
           password,
           profileDescription: "Diagnóstico estratégico pendente.",
           desiredOutcome: "Definir após a criação da conta.",
+          utmSource: localStorage.getItem("mn_utm_source") || "",
+          utmMedium: localStorage.getItem("mn_utm_medium") || "",
+          utmCampaign: localStorage.getItem("mn_utm_campaign") || "",
+          utmContent: localStorage.getItem("mn_utm_content") || "",
+          utmTerm: localStorage.getItem("mn_utm_term") || "",
         }),
       });
       const data = await response.json();
@@ -39,7 +44,6 @@ export default function Onboarding() {
         setError(data.error || "Não foi possível criar sua conta.");
         return;
       }
-      await trackEvent({ name: "signup_completed", occurredAt: new Date().toISOString() });
       router.push("/welcome");
     } catch {
       setError("Não foi possível conectar ao servidor.");
