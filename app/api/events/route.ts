@@ -16,6 +16,7 @@ export async function POST(request: Request) {
     "instagram_connect_started","instagram_connected","analysis_started",
     "analysis_completed","strategy_created","checkout_started",
     "payment_approved","subscription_started","subscription_cancelled",
+    "trial_started","diagnostic_started","diagnostic_completed","checkout_viewed","pix_created","trial_expired","upgrade_clicked",
   ]);
   if (!allowedNames.has(event.name)) {
     return NextResponse.json({ ok: false, error: "Invalid event name" }, { status: 400 });
