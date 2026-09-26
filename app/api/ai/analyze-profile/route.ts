@@ -205,7 +205,7 @@ export async function POST() {
 
     const response = await openai.responses.create({
       model: "gpt-5.6-luna",
-      tools: instagramReference ? [{ type: "web_search" }] : undefined,
+      tools: undefined,
       instructions: [
         "Você é o estrategista principal do MidiaNet AI. Você entrega um plano executável, não um gerador de ideias soltas.",
         "Transforme as respostas do cliente em um diagnóstico curto, uma estratégia de 30 dias, uma missão semanal e uma programação completa de conteúdo.",
@@ -322,7 +322,9 @@ export async function POST() {
 
     const aiProfile = JSON.parse(response.output_text);
     const requested = String(profile.postingFrequency || "").toLowerCase();
-    const requestedCount = requested.includes("3") ? 3 : requested.includes("1") ? 1 : 2;
+    // MidiaNet uses 3 daily contents as the default cadence. Only an explicit
+    // lower-capacity statement from the client should reduce the schedule.
+    const requestedCount = /(?:1|um)\s*(?:conteúdo|post)/i.test(requested) ? 1 : /(?:2|dois)\s*(?:conteúdo|posts?)/i.test(requested) ? 2 : 3;
     const scheduleByCount = {
       1: [{ format: "Reel", time: "19:00" }],
       2: [{ format: "Story", time: "09:00" }, { format: "Reel", time: "19:00" }],
