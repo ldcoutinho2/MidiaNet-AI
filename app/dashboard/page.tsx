@@ -147,6 +147,18 @@ function Week({ai,trial,drafts,onDraftChange}:{ai:AIProfile;trial:boolean;drafts
    {selected&&<ContentWorkspace slot={selected.slot} day={selected.day} draft={selected.draft} onDraftChange={onDraftChange} onClose={()=>setSelected(null)}/>}
  </div>
 }
+function ContentWorkspace({slot,day,draft,onDraftChange,onClose}:{slot:Slot;day:string;draft?:Draft;onDraftChange:(d:Draft)=>void;onClose:()=>void}){
+ const [busy,setBusy]=useState(false); const [copied,setCopied]=useState("");
+ const fields=[["Gancho",slot.hook],["Roteiro",slot.script],["Legenda",slot.caption],["CTA",slot.cta],["Visual",slot.visualDirection]];
+ async function copy(label:string,value:string){await navigator.clipboard?.writeText(value||"");setCopied(label);setTimeout(()=>setCopied(""),1200)}
+ async function status(next:"APPROVED"|"PUBLISHED"|"DRAFT"){if(!draft)return;setBusy(true);try{const r=await fetch("/api/content-drafts",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:draft.id,status:next})});const x=await r.json();if(r.ok&&x.draft)onDraftChange(x.draft)}finally{setBusy(false)}}
+ const all=fields.map(([label,value])=>`${label}: ${value||""}`).join("\n\n");
+ return <div className="feature contentWorkspace"><div className="row-between"><div><div className="badge">{day} · {slot.time} · {slot.format}</div><h2 style={{marginTop:10}}>{slot.title}</h2><p className="small muted" style={{marginTop:5}}>Objetivo: {slot.objective}</p></div><button className="btn secondary" onClick={onClose}>Fechar</button></div>
+  <div className="workspaceFields">{fields.map(([label,value])=><div className="workspaceField" key={label}><div className="row-between"><strong>{label}</strong><button className="copyBtn" onClick={()=>copy(label,value||"")}>{copied===label?"✓ Copiado":"Copiar"}</button></div><p style={{whiteSpace:"pre-line",lineHeight:1.6,marginTop:8}}>{value||"—"}</p></div>)}</div>
+  <button className="btn secondary full" style={{marginTop:12}} onClick={()=>copy("all",all)}>{copied==="all"?"✓ Tudo copiado":"📋 Copiar tudo"}</button>
+  <div className="workspaceActions"><button className="btn secondary" onClick={()=>status("DRAFT")} disabled={busy}>Refazer este post</button><button className="btn primary" onClick={()=>status("PUBLISHED")} disabled={busy}>✓ Marcar como postado</button></div>
+ </div>
+}
 function Diagnostic({ai,onAnalyze,analyzing}:{ai:AIProfile;onAnalyze:()=>void;analyzing:boolean}){
  return <div style={{marginTop:8}}>
    <div className="diagnosticSwitch"><a href="#audit">Auditoria</a><a href="#strategy">Estratégia</a></div>
