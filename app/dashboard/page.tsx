@@ -188,7 +188,6 @@ function Strategy({ai}:{ai:AIProfile}){
  return <div style={{marginTop:8}}>
   <div className="feature"><div className="badge">🎯 ESTRATÉGIA</div><h2 style={{marginTop:10}}>Seu direcionamento em poucas frases</h2><div className="strategyGrid" style={{marginTop:14}}><div className="card"><small className="muted">POSICIONAMENTO</small><p style={{marginTop:7}}>{ai.positioning}</p></div><div className="card"><small className="muted">PÚBLICO</small><p style={{marginTop:7}}>{ai.audience}</p></div><div className="card"><small className="muted">COMO CONVERTER</small><p style={{marginTop:7}}>{ai.conversionStrategy}</p></div><div className="card"><small className="muted">PRÓXIMO PASSO</small><p style={{marginTop:7}}>{ai.nextAction}</p></div></div></div>
   <div className="feature" style={{marginTop:14}}><div className="badge">📅 PLANO DE 30 DIAS</div><div className="strategyGrid" style={{marginTop:14}}>{plan.slice(0,4).map((x:any,i:number)=><div className="card" key={i}><small className="muted">FASE {i+1}</small><h3 style={{marginTop:7}}>{x.phase||x.title||("Semana "+(i+1))}</h3><p className="small muted" style={{marginTop:6}}>{x.focus||x.description||x.objective||""}</p></div>)}</div></div>
- </div>
   <Education/>
  </div>
 }
