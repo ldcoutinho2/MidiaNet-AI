@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { openai } from "@/lib/openai";
-import { syncInstagramAccount } from "@/lib/instagram";
 
 const schema = {
   type: "object",
@@ -84,15 +83,11 @@ export async function POST() {
   if (!account) return NextResponse.json({ error: "Nenhum Instagram conectado." }, { status: 400 });
 
   try {
-    // Refresh Apify data first so signed Instagram CDN image URLs are fresh when possible.
-    try {
-      await syncInstagramAccount(account.id);
-    } catch (refreshError) {
-      console.warn("[audit-profile] refresh before audit failed", refreshError);
-    }
-    const freshAccount = await db.socialAccount.findUnique({ where: { id: account.id } });
-    const sourceAccount = freshAccount || account;
-    const media = Array.isArray(sourceAccount.mediaCache) ? sourceAccount.mediaCache.slice(0, 6) : [];
+    // Use the latest synchronized data already stored in the account.
+    // Do not call Apify again here: the audit must respond quickly and should not
+    // get stuck waiting for two additional scraper runs.
+    const sourceAccount = account;
+    const media = Array.isArray(sourceAccount.mediaCache) ? sourceAccount.mediaCache.slice(0, 4) : [];
     const inputContent: any[] = [{
       type: "input_text",
       text: JSON.stringify({
@@ -152,6 +147,7 @@ export async function POST() {
         "Responda exclusivamente no JSON estruturado solicitado."
       ].join("\n"),
       input: [{ role: "user", content: inputContent }],
+      signal: AbortSignal.timeout(90000),
       text: {
         format: {
           type: "json_schema",
