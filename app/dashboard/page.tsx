@@ -208,7 +208,7 @@ function Education(){
  </div>
 }
 function Audit({audit,onAnalyze,analyzing}:{audit?:ProfileAudit;onAnalyze:()=>void;analyzing:boolean}){
- const safeAudit:any = audit ? {
+ const safeAudit:ProfileAudit|null = audit ? {
    ...audit,
    overallScore: Number(audit.overallScore ?? 0),
    summary: audit.summary || "Ainda não há resumo suficiente para esta auditoria.",
@@ -260,7 +260,7 @@ function Audit({audit,onAnalyze,analyzing}:{audit?:ProfileAudit;onAnalyze:()=>vo
    <div className="feature" style={{marginTop:14}}><div className="badge">👀 PRIMEIRA IMPRESSÃO</div><p style={{marginTop:10,lineHeight:1.6}}>{safeAudit.firstImpression}</p></div>
    <div className="auditGrid">{items.map(([title,item])=><div className="feature auditItem" key={title}><div className="row-between"><div className="badge">{title}</div><span className={`auditScore ${scoreClass(item.score)}`}>{item.score}/100</span></div><h3 style={{marginTop:12}}>{item.diagnosis}</h3>{"impact" in item&&item.impact&&<p className="small muted" style={{marginTop:7}}><strong>Por que importa:</strong> {item.impact}</p>}<p style={{marginTop:9}}><strong>Como corrigir:</strong> {item.recommendation}</p>{"ctaSuggestion" in item&&item.ctaSuggestion&&<div className="card" style={{marginTop:10}}><small className="muted">CTA SUGERIDO</small><p style={{marginTop:5}}>{item.ctaSuggestion}</p></div>}</div>)}</div>
    <div className="feature" style={{marginTop:14}}><div className="badge">✨ VERSÃO PRONTA</div><h2 style={{marginTop:10}}>Bio sugerida</h2><div className="card" style={{marginTop:10,whiteSpace:"pre-line",lineHeight:1.6}}>{safeAudit.bio.suggestedBio}</div><div style={{display:"flex",gap:9,flexWrap:"wrap",marginTop:10}}><button className="btn secondary" onClick={()=>navigator.clipboard?.writeText(safeAudit.bio.suggestedBio)}>Copiar bio</button><button className="btn primary" onClick={shareAudit}>📤 Compartilhar diagnóstico</button></div></div>
-   <div className="feature" style={{marginTop:14}}><div className="badge">🛠️ CORRIJA EM 5 MINUTOS</div><div style={{display:"grid",gap:8,marginTop:12}}>{safeAudit.priorities.slice(0,3).map((x,i)=><div className="card" key={i}><b>{i+1}.</b> {x}</div>)}</div></div>
+   <div className="feature" style={{marginTop:14}}><div className="badge">🛠️ CORRIJA EM 5 MINUTOS</div><div style={{display:"grid",gap:8,marginTop:12}}>{safeAudit.priorities.slice(0,3).map((x:string,i:number)=><div className="card" key={i}><b>{i+1}.</b> {x}</div>)}</div></div>
    {safeAudit.limitations?.length>0&&<p className="small muted" style={{marginTop:12}}>ℹ️ {safeAudit.limitations.join(" ")}</p>}
  </div>
 }
