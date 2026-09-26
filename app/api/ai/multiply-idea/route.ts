@@ -24,9 +24,16 @@ const schema = {
           caption: { type: "string" },
           cta: { type: "string" },
           direction: { type: "string" },
-          executionSteps: { type: "array", items: { type: "string" } }
+          executionSteps: { type: "array", items: { type: "string" } },
+          whyItFits: { type: "string" },
+          audienceProblem: { type: "string" },
+          funnelStage: { type: "string" },
+          desiredAction: { type: "string" },
+          successSignal: { type: "string" },
+          trendAngle: { type: "string" },
+          originalityAngle: { type: "string" }
         },
-        required: ["format","angle","title","hook","objective","script","caption","cta","direction","executionSteps"]
+        required: ["format","angle","title","hook","objective","script","caption","cta","direction","executionSteps","whyItFits","audienceProblem","funnelStage","desiredAction","successSignal","trendAngle","originalityAngle"]
       }
     }
   },
@@ -54,7 +61,8 @@ export async function POST(request: Request) {
       instructions: [
         "Você é o multiplicador de ideias do MidiaNet AI.",
         "O usuário traz UMA ideia. Transforme-a em exatamente 3 formatos: Reel, Carrossel e Story.",
-        "Não substitua a ideia central por outra. Expanda a mesma ideia por ângulos diferentes.",
+        "Não substitua a ideia central por outra. Expanda a mesma ideia por ângulos diferentes.",        "Para cada formato, explique por que ele se encaixa no perfil, qual problema da audiência ataca, qual etapa do funil atende, qual ação espera, qual sinal de sucesso observar, qual ângulo atual foi usado e o que torna a execução original.",
+
         "Cada formato deve ser completo e diferente, mantendo a mesma ideia central.",
         "Evite cinco variações quase iguais.",
         "Considere o nicho, público, objetivo, posicionamento e oferta do usuário.",
