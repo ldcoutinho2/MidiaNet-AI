@@ -357,7 +357,7 @@ function Results({profile,onNewIdea}:{profile:Profile;onNewIdea:()=>void}){
  const bestFormat=bestPost?.media_type==="Video"||bestPost?.media_type==="VIDEO"||bestPost?.media_type==="reel"?"Reel":bestPost?.media_type==="Sidecar"||bestPost?.media_type==="CAROUSEL_ALBUM"?"Carrossel":"Post";
  const nextTest=bestPost?{format:bestFormat,title:"Crie uma variação do seu melhor conteúdo",reason:"O conteúdo com mais interação na amostra foi um "+bestFormat+". Use o mesmo tema como ponto de partida, mas mude o gancho e a abordagem para testar uma nova versão."}:null;
  const engagement=(x:any)=>x?.followers?((Number(x.likes||0)+Number(x.comments||0))/Math.max(Number(x.followers),1))*100:null;
- const currentEngagement=engagement(latest), previousEngagement=engagement(previous);
+ const currentEngagement=engagement(latest), previousEngagement=engagement(previous); const followerDelta=delta("followers");
  const insights:string[]=[];
  if(delta("followers")!==null&&delta("followers")!>0) insights.push(`Você ganhou ${delta("followers")!.toLocaleString("pt-BR")} seguidores desde o registro anterior.`);
  if(currentEngagement!==null&&previousEngagement!==null&&currentEngagement>previousEngagement) insights.push(`O engajamento estimado subiu de ${previousEngagement.toFixed(2)}% para ${currentEngagement.toFixed(2)}%.`);
@@ -368,7 +368,7 @@ function Results({profile,onNewIdea}:{profile:Profile;onNewIdea:()=>void}){
  return <div style={{marginTop:8}}>
   <div className="evolutionHero"><div><div className="badge">📈 RESULTADOS</div><h2 style={{marginTop:12}}>Entenda o que está funcionando</h2><p style={{marginTop:7}}>Sincronize, compare e use os números para decidir o próximo conteúdo.</p></div><button className="btn instagramCta" onClick={syncInstagram} disabled={!data?.connected||syncing}>{syncing?"Sincronizando...":"↻ Sincronizar agora"}</button></div>
   <div className="resultsDecisionGrid">
-    <div className="decisionCard"><small>✅ ONDE VOCÊ ACERTOU</small><strong>{delta("followers")!=null&&delta("followers")>0?"O perfil ganhou seguidores desde o último registro.":currentBusiness?.salesCount>0?"Já existem vendas registradas para medir a conversão.":ai?.strengths?.[0]||"Ainda estamos construindo uma linha de base."}</strong><p>{ai?.strengths?.[1]||"O próximo ciclo precisa transformar esse sinal em aprendizado."}</p></div>
+    <div className="decisionCard"><small>✅ ONDE VOCÊ ACERTOU</small><strong>{followerDelta!=null&&followerDelta>0?"O perfil ganhou seguidores desde o último registro.":currentBusiness?.salesCount>0?"Já existem vendas registradas para medir a conversão.":ai?.strengths?.[0]||"Ainda estamos construindo uma linha de base."}</strong><p>{ai?.strengths?.[1]||"O próximo ciclo precisa transformar esse sinal em aprendizado."}</p></div>
     <div className="decisionCard"><small>⚠️ ONDE ESTÁ O ERRO</small><strong>{ai?.profileAudit?.priorities?.[0]||"Ainda não há dados suficientes para apontar um gargalo específico."}</strong><p>{ai?.profileAudit?.priorities?.[1]||"Sincronize o perfil e registre resultados para o diagnóstico ficar mais preciso."}</p></div>
     <div className="decisionCard"><small>🧠 O QUE FAZER AGORA</small><strong>{ai?.nextAction||"Execute o próximo conteúdo planejado e registre o resultado."}</strong><p>{ai?.weeklyMission||"O MidiaNet vai usar os próximos registros para ajustar a estratégia."}</p></div>
   </div>
