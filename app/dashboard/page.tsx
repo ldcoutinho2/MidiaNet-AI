@@ -48,7 +48,10 @@ export default function Dashboard(){
    trackEvent({name:"diagnostic_started",occurredAt:new Date().toISOString(),metadata:{source:"dashboard"}});
    setAnalyzing(true);setError("");
    try{
-     const r=await fetch("/api/ai/analyze-profile",{method:"POST"});
+     const controller=new AbortController();
+     const timeout=setTimeout(()=>controller.abort(),90000);
+     const r=await fetch("/api/ai/analyze-profile",{method:"POST",signal:controller.signal});
+     clearTimeout(timeout);
      const x=await r.json();
      if(!r.ok){setError(x.error||"Não foi possível montar sua estratégia.");return}
      setData(d=>d?.user.strategicProfile?{...d,user:{...d.user,strategicProfile:{...d.user.strategicProfile,aiProfile:x.aiProfile,aiAnalyzedAt:x.aiAnalyzedAt}}}:d);
@@ -57,7 +60,7 @@ export default function Dashboard(){
      if(draftsResponse.ok){const v=await draftsResponse.json();if(v?.drafts)setDrafts(v.drafts)}
      trackEvent({name:"diagnostic_completed",occurredAt:new Date().toISOString(),metadata:{source:"dashboard"}});
      setTab("home")
-   }catch{setError("Não foi possível conectar à IA.")}finally{setAnalyzing(false)}
+   }catch(e){setError(e instanceof DOMException&&e.name==="AbortError"?"A análise demorou mais que o esperado. Verifique se o Instagram está sincronizado e tente novamente.":"Não foi possível conectar à IA.")}finally{setAnalyzing(false)}
  }
 
  async function auditProfile(){
@@ -188,23 +191,48 @@ function Strategy({ai}:{ai:AIProfile}){
  return <div style={{marginTop:8}}>
   <div className="feature"><div className="badge">🎯 ESTRATÉGIA</div><h2 style={{marginTop:10}}>Seu direcionamento em poucas frases</h2><div className="strategyGrid" style={{marginTop:14}}><div className="card"><small className="muted">POSICIONAMENTO</small><p style={{marginTop:7}}>{ai.positioning}</p></div><div className="card"><small className="muted">PÚBLICO</small><p style={{marginTop:7}}>{ai.audience}</p></div><div className="card"><small className="muted">COMO CONVERTER</small><p style={{marginTop:7}}>{ai.conversionStrategy}</p></div><div className="card"><small className="muted">PRÓXIMO PASSO</small><p style={{marginTop:7}}>{ai.nextAction}</p></div></div></div>
   <div className="feature" style={{marginTop:14}}><div className="badge">📅 PLANO DE 30 DIAS</div><div className="strategyGrid" style={{marginTop:14}}>{plan.slice(0,4).map((x:any,i:number)=><div className="card" key={i}><small className="muted">FASE {i+1}</small><h3 style={{marginTop:7}}>{x.phase||x.title||("Semana "+(i+1))}</h3><p className="small muted" style={{marginTop:6}}>{x.focus||x.description||x.objective||""}</p></div>)}</div></div>
-  <Education/>
+  <Academy/>
  </div>
 }
-function Education(){
+function Academy(){
  const lessons=[
-  ["01","POSICIONAMENTO","Antes de postar, deixe claro quem você ajuda, qual problema resolve e por que alguém deveria acompanhar você. O conteúdo precisa reforçar essa percepção."],
-  ["02","PILARES DE CONTEÚDO","Use funções diferentes: descoberta para alcançar pessoas novas, autoridade para provar conhecimento, relacionamento para criar comunidade e conversão para levar à oferta."],
-  ["03","FUNIL","Pense no caminho: conteúdo → perfil → conversa/lead → oferta → venda. Cada publicação deve ter uma função no caminho, mesmo quando a CTA é apenas comentar ou salvar."],
-  ["04","HORÁRIO E CONSTÂNCIA","Começamos com horários consistentes e depois ajustamos pelos seus próprios dados. Horário inicial é hipótese; seus resultados reais dizem o que merece ser repetido."],
-  ["05","LEIA OS NÚMEROS","Não olhe só seguidores. Observe alcance, retenção, curtidas, comentários, DMs, leads e vendas. O objetivo é descobrir quais temas e formatos aproximam você do objetivo."],
-  ["06","CRIE COM INTENÇÃO","Antes de publicar, responda: para quem é, qual problema aborda, qual ação quero provocar e como isso ajuda meu objetivo? Assim você aprende a criar sem depender da IA."]
+  ["01","ENTENDA O JOGO","Instagram é uma vitrine e um canal de relacionamento. Antes de pensar em curtidas, entenda como uma pessoa descobre você, conhece sua oferta, ganha confiança e chega até uma conversa ou compra."],
+  ["02","CRIE SUA MARCA","Nome, @, foto, bio, identidade e linguagem precisam formar uma percepção clara. Em poucos segundos, alguém deve entender quem você é, o que faz e para quem."],
+  ["03","POSICIONAMENTO","Defina quem você ajuda, qual problema resolve, qual transformação oferece e por que sua marca merece atenção. Posicionamento orienta tudo o que você publica."],
+  ["04","PÚBLICO","Conteúdo bom não fala com todo mundo. Entenda dores, desejos, objeções, linguagem e momento de compra das pessoas que você quer atrair."],
+  ["05","PILARES + FUNIL","Organize conteúdo em descoberta, autoridade, relacionamento, prova, conversão e retenção. O funil conecta conteúdo → perfil → conversa → oferta → venda."],
+  ["06","CRIE COM INTENÇÃO","Antes de publicar, responda: para quem é, qual problema aborda, qual objetivo tem, qual ação espero e como vou medir. Isso transforma postagem em estratégia."],
+  ["07","LEIA OS NÚMEROS","Alcance, retenção, compartilhamentos, salvamentos, visitas ao perfil, DMs, leads e vendas respondem perguntas diferentes. Aprenda a usar cada número para decidir o próximo teste."],
+  ["08","TORNE-SE INDEPENDENTE","O objetivo é você entender o processo. O MidiaNet ajuda a planejar e executar, mas cada recomendação deve ensinar o motivo por trás da decisão."]
  ];
- return <div className="feature" style={{marginTop:14}}>
-  <div className="badge">🎓 APRENDA A CRESCER</div>
-  <h2 style={{marginTop:10}}>Entenda o porquê por trás do conteúdo</h2>
-  <p className="muted" style={{marginTop:7}}>O MidiaNet não deve apenas dizer o que postar. Ele também mostra a lógica para você aprender a tomar decisões sozinho.</p>
-  <div className="strategyGrid" style={{marginTop:14}}>{lessons.map(([n,t,d])=><div className="card" key={n}><small className="muted">{n}</small><h3 style={{marginTop:7}}>{t}</h3><p className="small muted" style={{marginTop:6,lineHeight:1.55}}>{d}</p></div>)}</div>
+ return <div className="academy feature" style={{marginTop:14}}>
+  <div className="badge">🎓 MÉTODO MIDIANET</div>
+  <h2 style={{marginTop:10}}>Aprenda a construir sua presença na internet</h2>
+  <p className="muted" style={{marginTop:7,maxWidth:820}}>Uma aula prática dentro do seu painel para você aprender posicionamento, marca, conteúdo, funil e métricas — e entender o que está fazendo em vez de apenas seguir uma lista de posts.</p>
+  <div className="academyGrid" style={{marginTop:16}}>{lessons.map(([n,t,d])=><div className="academyLesson" key={n}><small className="muted">{n}</small><h3 style={{marginTop:7}}>{t}</h3><p className="small muted" style={{marginTop:7,lineHeight:1.6}}>{d}</p></div>)}</div>
+  <Coach/>
+ </div>
+}
+function Coach(){
+ const [question,setQuestion]=useState(""); const [answer,setAnswer]=useState(""); const [busy,setBusy]=useState(false); const [error,setError]=useState("");
+ async function ask(){
+  const q=question.trim(); if(!q)return;
+  setBusy(true);setError("");setAnswer("");
+  try{
+   const r=await fetch("/api/ai/coach",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:q})});
+   const x=await r.json(); if(!r.ok)throw new Error(x.error||"Não foi possível responder.");
+   setAnswer(x.answer||""); setQuestion("");
+  }catch(e){setError(e instanceof Error?e.message:"Não foi possível responder agora.");}
+  finally{setBusy(false);}
+ }
+ return <div className="coachBox">
+  <div className="badge">💬 TIRE SUAS DÚVIDAS</div>
+  <h2 style={{marginTop:10}}>Tem uma dúvida? Pergunte ao seu professor.</h2>
+  <p className="muted" style={{marginTop:7}}>Pergunte sobre posicionamento, conteúdo, Instagram, funil, vendas, marca ou qualquer decisão que você esteja tentando tomar.</p>
+  <textarea className="coachInput" value={question} maxLength={1200} onChange={e=>setQuestion(e.target.value)} placeholder="Ex.: Como devo me posicionar para vender meu serviço sem parecer igual aos concorrentes?" />
+  <button className="btn primary" style={{marginTop:10}} onClick={ask} disabled={busy||!question.trim()}>{busy?"Pensando...":"Perguntar ao MidiaNet →"}</button>
+  {error&&<p className="small dashboardError" style={{marginTop:10}}>{error}</p>}
+  {answer&&<div className="coachAnswer"><strong>Resposta do MidiaNet</strong><p style={{whiteSpace:"pre-line",lineHeight:1.65,marginTop:9}}>{answer}</p></div>}
  </div>
 }
 function Audit({audit,onAnalyze,analyzing}:{audit?:ProfileAudit;onAnalyze:()=>void;analyzing:boolean}){
