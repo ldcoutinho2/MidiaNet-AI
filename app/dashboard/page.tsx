@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 type Slot = { time:string; format:string; role:string; objective:string; title:string; topic:string; hook:string; script:string; caption:string; visualDirection:string; cta:string; executionSteps:string[] };
 type Draft = { id:string; slotKey:string|null; status:"IDEA"|"DRAFT"|"APPROVED"|"SCHEDULED"|"PUBLISHED"; dayLabel:string|null; timeLabel:string|null; title:string; approvedAt?:string|null; publishedAt?:string|null };
 type DayPlan = { day:string; mission:string; slots:Slot[] };
-type ProfileAudit = { overallScore:number; summary:string; firstImpression:string; bio:{diagnosis:string;impact:string;recommendation:string;suggestedBio:string}; profilePhoto:{diagnosis:string;recommendation:string}; nameAndPositioning:{diagnosis:string;recommendation:string}; highlights:{diagnosis:string;recommendation:string}; grid:{diagnosis:string;recommendation:string}; conversion:{diagnosis:string;recommendation:string;ctaSuggestion:string}; priorities:string[]; limitations:string[] };
+type AuditItem = {score:number;diagnosis:string;recommendation:string};
+type ProfileAudit = { overallScore:number; summary:string; firstImpression:string; bio:AuditItem&{impact:string;suggestedBio:string}; profilePhoto:AuditItem; nameAndPositioning:AuditItem; highlights:AuditItem; grid:AuditItem; postingFrequency:AuditItem; conversion:AuditItem&{ctaSuggestion:string}; priorities:string[]; limitations:string[] };
 type AIProfile = { objective:string; currentStage:string; diagnosis:string; mainProblem:string; strategy:string; weeklyMission:string; nextAction:string; postingFrequency:string; postingFrequencyReason:string; weeklyContentCount:number; dailyContentCount:string; positioning:string; audience:string; conversionStrategy:string; contentPillars:string[]; tone:string[]; strengths:string[]; opportunities:string[]; thirtyDayPlan:{phase:string;focus:string;action:string;expectedSignal:string}[]; weeklyPlan:DayPlan[]; profileAudit?:ProfileAudit };
 type Profile = Record<string,any> & { aiProfile?:AIProfile|null; aiAnalyzedAt?:string|null };
 type Me = { user:{name:string|null;email:string;phone?:string|null;strategicProfile:Profile|null;subscription?:any|null;socialAccounts?:{id:string;platform:string;username:string|null;fullName?:string|null;biography?:string|null;website?:string|null;profilePictureUrl?:string|null;followersCount?:number|null;followsCount?:number|null;mediaCount?:number|null;lastSyncedAt?:string|null;connectedAt:string}[]} };
@@ -143,6 +144,27 @@ function Week({ai,drafts,onDraftChange}:{ai:AIProfile;drafts:Draft[];onDraftChan
    <div className="dayTabs">{ai.weeklyPlan.map((d,i)=><button key={i} className={i===dayIndex?"active":""} onClick={()=>setDayIndex(i)}>{d.day.slice(0,3)}</button>)}</div>
    {day&&<div className="feature" style={{marginTop:10}}><div className="row-between"><div><div className="badge">{day.day}</div><p className="muted" style={{marginTop:7}}>{day.mission}</p></div><span className="small muted">{day.slots.length} conteúdo{day.slots.length===1?"":"s"}</span></div><div style={{display:"grid",gap:9,marginTop:14}}>{day.slots.map((slot,j)=>{const draft=drafts.find(d=>d.slotKey===`${dayIndex}:${j}`);return <button key={j} onClick={()=>setSelected({slot,day:day.day,draft})} className="contentRow"><div style={{minWidth:0}}><strong>{fmtIcon[slot.format]||"✨"} {slot.time} · {slot.format}</strong><div style={{marginTop:5}}>{slot.title}</div><div className="small muted" style={{marginTop:4}}>{slot.objective}</div>{draft&&<div className="small" style={{marginTop:6}}>{draft.status==="PUBLISHED"?"✅ Publicado":draft.status==="APPROVED"?"🟢 Aprovado":draft.status==="SCHEDULED"?"🗓️ Agendado":draft.status==="DRAFT"?"✏️ Rascunho":"💡 Ideia"}</div>}</div><span>→</span></button>})}</div></div>}
    {selected&&<ContentWorkspace slot={selected.slot} day={selected.day} draft={selected.draft} onDraftChange={onDraftChange} onClose={()=>setSelected(null)}/>}
+ </div>
+}
+function Audit({audit,onAnalyze,analyzing}:{audit?:ProfileAudit;onAnalyze:()=>void;analyzing:boolean}){
+ if(!audit) return <div className="feature" style={{marginTop:22}}><div className="badge">🔍 Auditoria do perfil</div><h2 style={{marginTop:12}}>Vamos analisar seu Instagram.</h2><p className="muted" style={{marginTop:8}}>A análise usa os dados sincronizados do perfil e os conteúdos públicos disponíveis.</p><button className="btn primary" style={{marginTop:16}} onClick={onAnalyze} disabled={analyzing}>{analyzing?"Analisando perfil...":"🔍 Fazer auditoria agora"}</button></div>;
+ const items=[
+   ["Nome e @",audit.nameAndPositioning],
+   ["Foto de perfil",audit.profilePhoto],
+   ["Bio",audit.bio],
+   ["Destaques",audit.highlights],
+   ["Grade / feed",audit.grid],
+   ["Frequência",audit.postingFrequency],
+   ["Conversão",audit.conversion]
+ ] as const;
+ const scoreClass=(score:number)=>score>=70?"good":score>=45?"warn":"bad";
+ return <div style={{marginTop:8}}>
+   <div className="evolutionHero"><div><div className="badge">🔍 DIAGNÓSTICO</div><h2 style={{marginTop:12}}>Como seu perfil está sendo percebido?</h2><p style={{marginTop:7}}>{audit.summary}</p><p className="small muted" style={{marginTop:8}}>A nota é uma referência baseada nos dados disponíveis, não uma verdade objetiva.</p></div><div className="auditScoreHero"><small>NOTA GERAL</small><strong>{audit.overallScore}<span>/100</span></strong><button className="btn primary" style={{marginTop:10}} onClick={onAnalyze} disabled={analyzing}>{analyzing?"Atualizando...":"↻ Atualizar"}</button></div></div>
+   <div className="feature" style={{marginTop:14}}><div className="badge">👀 PRIMEIRA IMPRESSÃO</div><p style={{marginTop:10,lineHeight:1.6}}>{audit.firstImpression}</p></div>
+   <div className="auditGrid">{items.map(([title,item])=><div className="feature auditItem" key={title}><div className="row-between"><div className="badge">{title}</div><span className={`auditScore ${scoreClass(item.score)}`}>{item.score}/100</span></div><h3 style={{marginTop:12}}>{item.diagnosis}</h3>{"impact" in item&&item.impact&&<p className="small muted" style={{marginTop:7}}><strong>Por que importa:</strong> {item.impact}</p>}<p style={{marginTop:9}}><strong>Como corrigir:</strong> {item.recommendation}</p>{"ctaSuggestion" in item&&item.ctaSuggestion&&<div className="card" style={{marginTop:10}}><small className="muted">CTA SUGERIDO</small><p style={{marginTop:5}}>{item.ctaSuggestion}</p></div>}</div>)}</div>
+   <div className="feature" style={{marginTop:14}}><div className="badge">✨ VERSÃO PRONTA</div><h2 style={{marginTop:10}}>Bio sugerida</h2><div className="card" style={{marginTop:10,whiteSpace:"pre-line",lineHeight:1.6}}>{audit.bio.suggestedBio}</div><button className="btn secondary" style={{marginTop:10}} onClick={()=>navigator.clipboard?.writeText(audit.bio.suggestedBio)}>Copiar bio</button></div>
+   <div className="feature" style={{marginTop:14}}><div className="badge">🛠️ CORRIJA EM 5 MINUTOS</div><div style={{display:"grid",gap:8,marginTop:12}}>{audit.priorities.slice(0,3).map((x,i)=><div className="card" key={i}><b>{i+1}.</b> {x}</div>)}</div></div>
+   {audit.limitations?.length>0&&<p className="small muted" style={{marginTop:12}}>ℹ️ {audit.limitations.join(" ")}</p>}
  </div>
 }
 }
