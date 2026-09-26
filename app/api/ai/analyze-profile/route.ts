@@ -79,8 +79,8 @@ const schema = {
           mission: { type: "string" },
           slots: {
             type: "array",
-            minItems: 4,
-            maxItems: 4,
+            minItems: 1,
+            maxItems: 3,
             items: {
               type: "object",
               additionalProperties: false,
