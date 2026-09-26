@@ -189,10 +189,43 @@ function Strategy({ai}:{ai:AIProfile}){
   <div className="feature"><div className="badge">🎯 ESTRATÉGIA</div><h2 style={{marginTop:10}}>Seu direcionamento em poucas frases</h2><div className="strategyGrid" style={{marginTop:14}}><div className="card"><small className="muted">POSICIONAMENTO</small><p style={{marginTop:7}}>{ai.positioning}</p></div><div className="card"><small className="muted">PÚBLICO</small><p style={{marginTop:7}}>{ai.audience}</p></div><div className="card"><small className="muted">COMO CONVERTER</small><p style={{marginTop:7}}>{ai.conversionStrategy}</p></div><div className="card"><small className="muted">PRÓXIMO PASSO</small><p style={{marginTop:7}}>{ai.nextAction}</p></div></div></div>
   <div className="feature" style={{marginTop:14}}><div className="badge">📅 PLANO DE 30 DIAS</div><div className="strategyGrid" style={{marginTop:14}}>{plan.slice(0,4).map((x:any,i:number)=><div className="card" key={i}><small className="muted">FASE {i+1}</small><h3 style={{marginTop:7}}>{x.phase||x.title||("Semana "+(i+1))}</h3><p className="small muted" style={{marginTop:6}}>{x.focus||x.description||x.objective||""}</p></div>)}</div></div>
  </div>
+  <Education/>
+ </div>
+}
+function Education(){
+ const lessons=[
+  ["01","POSICIONAMENTO","Antes de postar, deixe claro quem você ajuda, qual problema resolve e por que alguém deveria acompanhar você. O conteúdo precisa reforçar essa percepção."],
+  ["02","PILARES DE CONTEÚDO","Use funções diferentes: descoberta para alcançar pessoas novas, autoridade para provar conhecimento, relacionamento para criar comunidade e conversão para levar à oferta."],
+  ["03","FUNIL","Pense no caminho: conteúdo → perfil → conversa/lead → oferta → venda. Cada publicação deve ter uma função no caminho, mesmo quando a CTA é apenas comentar ou salvar."],
+  ["04","HORÁRIO E CONSTÂNCIA","Começamos com horários consistentes e depois ajustamos pelos seus próprios dados. Horário inicial é hipótese; seus resultados reais dizem o que merece ser repetido."],
+  ["05","LEIA OS NÚMEROS","Não olhe só seguidores. Observe alcance, retenção, curtidas, comentários, DMs, leads e vendas. O objetivo é descobrir quais temas e formatos aproximam você do objetivo."],
+  ["06","CRIE COM INTENÇÃO","Antes de publicar, responda: para quem é, qual problema aborda, qual ação quero provocar e como isso ajuda meu objetivo? Assim você aprende a criar sem depender da IA."]
+ ];
+ return <div className="feature" style={{marginTop:14}}>
+  <div className="badge">🎓 APRENDA A CRESCER</div>
+  <h2 style={{marginTop:10}}>Entenda o porquê por trás do conteúdo</h2>
+  <p className="muted" style={{marginTop:7}}>O MidiaNet não deve apenas dizer o que postar. Ele também mostra a lógica para você aprender a tomar decisões sozinho.</p>
+  <div className="strategyGrid" style={{marginTop:14}}>{lessons.map(([n,t,d])=><div className="card" key={n}><small className="muted">{n}</small><h3 style={{marginTop:7}}>{t}</h3><p className="small muted" style={{marginTop:6,lineHeight:1.55}}>{d}</p></div>)}</div>
+ </div>
 }
 function Audit({audit,onAnalyze,analyzing}:{audit?:ProfileAudit;onAnalyze:()=>void;analyzing:boolean}){
+ const safeAudit:any = audit ? {
+   ...audit,
+   overallScore: Number(audit.overallScore ?? 0),
+   summary: audit.summary || "Ainda não há resumo suficiente para esta auditoria.",
+   firstImpression: audit.firstImpression || "A primeira impressão ainda precisa ser detalhada.",
+   bio: {score:0,diagnosis:"Não avaliado.",impact:"",recommendation:"Faça uma revisão da bio.",suggestedBio:"",...(audit.bio||{})},
+   profilePhoto: {score:0,diagnosis:"Não avaliado.",recommendation:"Revise a foto de perfil.",...(audit.profilePhoto||{})},
+   nameAndPositioning: {score:0,diagnosis:"Não avaliado.",recommendation:"Deixe nome e posicionamento claros.",...(audit.nameAndPositioning||{})},
+   highlights: {score:0,diagnosis:"Não avaliado.",recommendation:"Organize os destaques principais.",...(audit.highlights||{})},
+   grid: {score:0,diagnosis:"Não avaliado.",recommendation:"Crie uma identidade visual coerente.",...(audit.grid||{})},
+   postingFrequency: {score:0,diagnosis:"Não avaliado.",recommendation:"Mantenha uma rotina consistente.",...(audit.postingFrequency||{})},
+   conversion: {score:0,diagnosis:"Não avaliado.",recommendation:"Defina uma CTA clara.",ctaSuggestion:"",...(audit.conversion||{})},
+   priorities: Array.isArray(audit.priorities)?audit.priorities:[],
+   limitations: Array.isArray(audit.limitations)?audit.limitations:[]
+ } : null;
  async function shareAudit(){
-   if(!audit)return;
+   if(!safeAudit)return;
    const canvas=document.createElement("canvas");canvas.width=1080;canvas.height=1920;
    const ctx=canvas.getContext("2d");if(!ctx)return;
    ctx.fillStyle="#09090b";ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -224,12 +257,12 @@ function Audit({audit,onAnalyze,analyzing}:{audit?:ProfileAudit;onAnalyze:()=>vo
  ] as const;
  const scoreClass=(score:number)=>score>=70?"good":score>=45?"warn":"bad";
  return <div style={{marginTop:8}}>
-   <div className="evolutionHero"><div><div className="badge">🔍 DIAGNÓSTICO</div><h2 style={{marginTop:12}}>Como seu perfil está sendo percebido?</h2><p style={{marginTop:7}}>{audit.summary}</p><p className="small muted" style={{marginTop:8}}>A nota é uma referência baseada nos dados disponíveis, não uma verdade objetiva.</p></div><div className="auditScoreHero"><small>NOTA GERAL</small><strong>{audit.overallScore}<span>/100</span></strong><button className="btn primary" style={{marginTop:10}} onClick={onAnalyze} disabled={analyzing}>{analyzing?"Atualizando...":"↻ Atualizar"}</button></div></div>
-   <div className="feature" style={{marginTop:14}}><div className="badge">👀 PRIMEIRA IMPRESSÃO</div><p style={{marginTop:10,lineHeight:1.6}}>{audit.firstImpression}</p></div>
+   <div className="evolutionHero"><div><div className="badge">🔍 DIAGNÓSTICO</div><h2 style={{marginTop:12}}>Como seu perfil está sendo percebido?</h2><p style={{marginTop:7}}>{safeAudit.summary}</p><p className="small muted" style={{marginTop:8}}>A nota é uma referência baseada nos dados disponíveis, não uma verdade objetiva.</p></div><div className="auditScoreHero"><small>NOTA GERAL</small><strong>{safeAudit.overallScore}<span>/100</span></strong><button className="btn primary" style={{marginTop:10}} onClick={onAnalyze} disabled={analyzing}>{analyzing?"Atualizando...":"↻ Atualizar"}</button></div></div>
+   <div className="feature" style={{marginTop:14}}><div className="badge">👀 PRIMEIRA IMPRESSÃO</div><p style={{marginTop:10,lineHeight:1.6}}>{safeAudit.firstImpression}</p></div>
    <div className="auditGrid">{items.map(([title,item])=><div className="feature auditItem" key={title}><div className="row-between"><div className="badge">{title}</div><span className={`auditScore ${scoreClass(item.score)}`}>{item.score}/100</span></div><h3 style={{marginTop:12}}>{item.diagnosis}</h3>{"impact" in item&&item.impact&&<p className="small muted" style={{marginTop:7}}><strong>Por que importa:</strong> {item.impact}</p>}<p style={{marginTop:9}}><strong>Como corrigir:</strong> {item.recommendation}</p>{"ctaSuggestion" in item&&item.ctaSuggestion&&<div className="card" style={{marginTop:10}}><small className="muted">CTA SUGERIDO</small><p style={{marginTop:5}}>{item.ctaSuggestion}</p></div>}</div>)}</div>
-   <div className="feature" style={{marginTop:14}}><div className="badge">✨ VERSÃO PRONTA</div><h2 style={{marginTop:10}}>Bio sugerida</h2><div className="card" style={{marginTop:10,whiteSpace:"pre-line",lineHeight:1.6}}>{audit.bio.suggestedBio}</div><div style={{display:"flex",gap:9,flexWrap:"wrap",marginTop:10}}><button className="btn secondary" onClick={()=>navigator.clipboard?.writeText(audit.bio.suggestedBio)}>Copiar bio</button><button className="btn primary" onClick={shareAudit}>📤 Compartilhar diagnóstico</button></div></div>
-   <div className="feature" style={{marginTop:14}}><div className="badge">🛠️ CORRIJA EM 5 MINUTOS</div><div style={{display:"grid",gap:8,marginTop:12}}>{audit.priorities.slice(0,3).map((x,i)=><div className="card" key={i}><b>{i+1}.</b> {x}</div>)}</div></div>
-   {audit.limitations?.length>0&&<p className="small muted" style={{marginTop:12}}>ℹ️ {audit.limitations.join(" ")}</p>}
+   <div className="feature" style={{marginTop:14}}><div className="badge">✨ VERSÃO PRONTA</div><h2 style={{marginTop:10}}>Bio sugerida</h2><div className="card" style={{marginTop:10,whiteSpace:"pre-line",lineHeight:1.6}}>{safeAudit.bio.suggestedBio}</div><div style={{display:"flex",gap:9,flexWrap:"wrap",marginTop:10}}><button className="btn secondary" onClick={()=>navigator.clipboard?.writeText(audit.bio.suggestedBio)}>Copiar bio</button><button className="btn primary" onClick={shareAudit}>📤 Compartilhar diagnóstico</button></div></div>
+   <div className="feature" style={{marginTop:14}}><div className="badge">🛠️ CORRIJA EM 5 MINUTOS</div><div style={{display:"grid",gap:8,marginTop:12}}>{safeAudit.priorities.slice(0,3).map((x,i)=><div className="card" key={i}><b>{i+1}.</b> {x}</div>)}</div></div>
+   {safeAudit.limitations?.length>0&&<p className="small muted" style={{marginTop:12}}>ℹ️ {safeAudit.limitations.join(" ")}</p>}
  </div>
 }
 function Results({profile,onNewIdea}:{profile:Profile;onNewIdea:()=>void}){
