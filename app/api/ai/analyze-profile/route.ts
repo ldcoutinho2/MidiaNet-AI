@@ -96,9 +96,16 @@ const schema = {
                 caption: { type: "string" },
                 visualDirection: { type: "string" },
                 cta: { type: "string" },
-                executionSteps: { type: "array", items: { type: "string" } }
+                executionSteps: { type: "array", items: { type: "string" } },
+                whyItFits: { type: "string" },
+                audienceProblem: { type: "string" },
+                funnelStage: { type: "string" },
+                desiredAction: { type: "string" },
+                successSignal: { type: "string" },
+                trendAngle: { type: "string" },
+                originalityAngle: { type: "string" }
               },
-              required: ["time","format","role","objective","title","topic","hook","script","caption","visualDirection","cta","executionSteps"]
+              required: ["time","format","role","objective","title","topic","hook","script","caption","visualDirection","cta","executionSteps","whyItFits","audienceProblem","funnelStage","desiredAction","successSignal","trendAngle","originalityAngle"]
             }
           }
         },
@@ -224,6 +231,13 @@ export async function POST() {
         "O horário do Story é 09:00. Para as 3 publicações principais, escolha os horários mais adequados entre 12:30, 17:00, 19:00 e 21:00 com base nos dados e no contexto do perfil. Não trate esses horários como garantia; são hipóteses de execução.",
         "A programação deve deixar impossível confundir quantos conteúdos existem em cada dia: exatamente 4, sendo 1 Story + 3 publicações principais. Cada slot deve ser diferente e completo.",
         "Distribua funções claras entre os conteúdos: descoberta/alcance, autoridade, relacionamento, prova quando houver dados reais, oferta/conversão e retenção. Não invente provas.",
+        "Para cada conteúdo entregue também: por que ele é adequado a este perfil, qual problema específico da audiência ele ataca, em que etapa do funil ele atua, qual ação queremos provocar, qual sinal/métrica indica sucesso, qual ângulo atual ou tendência justifica o tema e qual elemento torna a ideia original.",
+        "Nunca escreva títulos genéricos como 'dicas para crescer', '3 dicas para melhorar' ou equivalentes sem um contexto específico. O título deve conter uma tensão, situação, opinião, contraste, erro, desejo ou oportunidade real do nicho.",
+        "Cada dia deve formar uma sequência: Story abre conversa ou contexto; publicação 1 conquista atenção/descoberta; publicação 2 aprofunda autoridade, prova ou utilidade; publicação 3 conduz relacionamento, oferta ou próxima ação conforme o objetivo. Não repita a mesma função quatro vezes.",
+        "Use uma ideia central diferente por dia. Evite preencher a semana trocando apenas o título de um mesmo post.",
+        "Use sinais de 2026 sem copiar tendências vazias: conteúdo original, compartilhável, salvável, linguagem natural pesquisável, perguntas que geram conversa, Reels para descoberta e carrosséis para profundidade/salvamento. Adapte isso ao nicho; não force formato só porque está em alta.",
+        "Quando mencionar uma tendência, transforme-a em uma aplicação concreta para o nicho do cliente. A tendência é um mecanismo, não o tema inteiro.",
+        "Não invente notícias, memes, áudios ou tendências específicas. Se não houver dado em tempo real, use apenas padrões atuais conhecidos e sinalize como contexto, não como fato sobre o perfil.",
         "Para cada conteúdo entregue horário sugerido, formato, função, objetivo, título, tema, gancho, roteiro completo, legenda pronta, direção visual, CTA e passos de execução.",
         "Para Reels, escreva cena a cena quando possível. Se o cliente não aparecer, use tela, B-roll, demonstração, texto ou voz em off.",
         "Os horários são pontos de partida. Se houver histórico do próprio perfil, use esses dados para personalizar os horários; sem histórico, trate-os como hipóteses.",
@@ -346,7 +360,14 @@ export async function POST() {
             caption: posts[posts.length - 1]?.caption || "",
             visualDirection: posts[posts.length - 1]?.visualDirection || "",
             cta: posts[posts.length - 1]?.cta || "",
-            executionSteps: posts[posts.length - 1]?.executionSteps || []
+            executionSteps: posts[posts.length - 1]?.executionSteps || [],
+            whyItFits: posts[posts.length - 1]?.whyItFits || "Completa a estratégia definida para este perfil.",
+            audienceProblem: posts[posts.length - 1]?.audienceProblem || "",
+            funnelStage: posts[posts.length - 1]?.funnelStage || "Relacionamento",
+            desiredAction: posts[posts.length - 1]?.desiredAction || "",
+            successSignal: posts[posts.length - 1]?.successSignal || "Observe as interações e a ação esperada.",
+            trendAngle: posts[posts.length - 1]?.trendAngle || "",
+            originalityAngle: posts[posts.length - 1]?.originalityAngle || ""
           });
         }
         const finalPosts = posts.slice(0, 3).map((slot: any, index: number) => ({
