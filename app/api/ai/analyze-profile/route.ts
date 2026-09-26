@@ -85,7 +85,7 @@ const schema = {
               type: "object",
               additionalProperties: false,
               properties: {
-                time: { type: "string", enum: ["09:00","12:30","19:00","21:00"] },
+                time: { type: "string", enum: ["09:00","12:30","17:00","19:00","21:00"] },
                 format: { type: "string", enum: ["Story","Foto","Reel","Carrossel"] },
                 role: { type: "string" },
                 objective: { type: "string" },
@@ -218,10 +218,11 @@ export async function POST() {
         "Quando imagens forem anexadas ao input, faça uma análise visual objetiva delas: composição, legibilidade, hierarquia, consistência, uso de texto, enquadramento e qualidade percebida. Não identifique pessoas reais nem invente elementos que não estejam visíveis.",
         "Use as imagens somente para avaliar os conteúdos realmente enviados. Não trate os últimos 6 conteúdos como se fossem necessariamente toda a grade do perfil.",
         "A frequência informada pelo cliente é uma preferência de referência; não trate automaticamente uma meta de 5 conteúdos por semana como limite se a capacidade e o objetivo indicarem uma frequência maior. Só trate como limite quando o cliente disser explicitamente que não consegue produzir mais.",
-        "Escolha o ritmo de produção de acordo com o objetivo e capacidade informados. O padrão do MidiaNet é 3 conteúdos por dia: Story às 09:00, conteúdo de valor às 12:30 e Reel/Carrossel/Foto às 19:00. Um quarto conteúdo às 21:00 é opcional.",
-        "O padrão é 3 conteúdos por dia durante 7 dias. Use 09:00 para Story, 12:30 para conteúdo de valor ou relacionamento e 19:00 para Reel, Carrossel ou Foto. Um quarto conteúdo às 21:00 é opcional quando fizer sentido.",
-        "Distribua os formatos de forma coerente com o ritmo escolhido. Stories são complementares quando houver 2 ou 3 conteúdos; não trate Story como obrigatório quando o ritmo for 1 conteúdo por dia.",
-        "A programação deve deixar impossível confundir quantos conteúdos existem em cada dia. Cada slot deve ser um conteúdo diferente e completo.",
+        "A programação diária do MidiaNet é SEMPRE 4 conteúdos: 1 Story obrigatório primeiro + 3 publicações principais no feed. O Story é fundamental e NÃO conta como uma das 3 publicações principais.",
+        "Em todos os 7 dias, gere exatamente 4 slots nesta ordem: Story primeiro, depois publicação 1, publicação 2 e publicação 3. Nunca reduza para 1, 2 ou 3 conteúdos totais por dia.",
+        "O Story deve ser pensado para abertura do dia, relacionamento, interação ou preparação da audiência. As outras 3 publicações devem ser escolhidas pela análise do perfil: o modelo decide entre Foto, Reel, Carrossel e outros formatos disponíveis conforme objetivo, nicho, público, capacidade e histórico.",
+        "O horário do Story é 09:00. Para as 3 publicações principais, escolha os horários mais adequados entre 12:30, 17:00, 19:00 e 21:00 com base nos dados e no contexto do perfil. Não trate esses horários como garantia; são hipóteses de execução.",
+        "A programação deve deixar impossível confundir quantos conteúdos existem em cada dia: exatamente 4, sendo 1 Story + 3 publicações principais. Cada slot deve ser diferente e completo.",
         "Distribua funções claras entre os conteúdos: descoberta/alcance, autoridade, relacionamento, prova quando houver dados reais, oferta/conversão e retenção. Não invente provas.",
         "Para cada conteúdo entregue horário sugerido, formato, função, objetivo, título, tema, gancho, roteiro completo, legenda pronta, direção visual, CTA e passos de execução.",
         "Para Reels, escreva cena a cena quando possível. Se o cliente não aparecer, use tela, B-roll, demonstração, texto ou voz em off.",
@@ -321,35 +322,53 @@ export async function POST() {
     }
 
     const aiProfile = JSON.parse(response.output_text);
-    const requested = String(profile.postingFrequency || "").toLowerCase();
-    // MidiaNet uses 3 daily contents as the default cadence. Only an explicit
-    // lower-capacity statement from the client should reduce the schedule.
-    const requestedCount = /(?:1|um)\s*(?:conteúdo|post)/i.test(requested) ? 1 : /(?:2|dois)\s*(?:conteúdo|posts?)/i.test(requested) ? 2 : 3;
-    const scheduleByCount = {
-      1: [{ format: "Reel", time: "19:00" }],
-      2: [{ format: "Story", time: "09:00" }, { format: "Reel", time: "19:00" }],
-      3: [{ format: "Story", time: "09:00" }, { format: "Foto", time: "12:30" }, { format: "Reel", time: "19:00" }]
-    } as const;
-    const fixedSchedule = scheduleByCount[requestedCount];
+    // Cadência obrigatória: 1 Story + 3 publicações principais por dia.
+    // Os formatos e os horários das 3 publicações continuam sendo definidos pela análise da IA.
+    const postTimeOrder = ["12:30", "17:00", "19:00", "21:00"];
     if (Array.isArray(aiProfile.weeklyPlan)) {
       aiProfile.weeklyPlan = aiProfile.weeklyPlan.slice(0, 7).map((day: any) => {
-        const remaining = Array.isArray(day.slots) ? [...day.slots] : [];
-        const slots = fixedSchedule.map((target: any) => {
-          const index = remaining.findIndex((slot: any) => slot?.format === target.format);
-          const chosen = index >= 0 ? remaining.splice(index, 1)[0] : (remaining.shift() || {});
-          return { ...chosen, format: target.format, time: target.time };
-        });
-        return { ...day, slots };
+        const rawSlots = Array.isArray(day.slots) ? day.slots : [];
+        const story = rawSlots.find((slot: any) => String(slot?.format || "").toLowerCase() === "story") || rawSlots[0] || {};
+        const posts = rawSlots
+          .filter((slot: any) => slot !== story && String(slot?.format || "").toLowerCase() !== "story")
+          .slice(0, 3)
+          .sort((a: any, b: any) => postTimeOrder.indexOf(a?.time) - postTimeOrder.indexOf(b?.time));
+        while (posts.length < 3) {
+          posts.push({
+            ...(posts[posts.length - 1] || story || {}),
+            format: posts.length === 0 ? "Reel" : posts.length === 1 ? "Carrossel" : "Foto",
+            title: posts[posts.length - 1]?.title || "Publicação principal do dia",
+            role: posts[posts.length - 1]?.role || "Publicação principal",
+            objective: posts[posts.length - 1]?.objective || "Executar a estratégia do perfil",
+            topic: posts[posts.length - 1]?.topic || "",
+            hook: posts[posts.length - 1]?.hook || "",
+            script: posts[posts.length - 1]?.script || "",
+            caption: posts[posts.length - 1]?.caption || "",
+            visualDirection: posts[posts.length - 1]?.visualDirection || "",
+            cta: posts[posts.length - 1]?.cta || "",
+            executionSteps: posts[posts.length - 1]?.executionSteps || []
+          });
+        }
+        const finalPosts = posts.slice(0, 3).map((slot: any, index: number) => ({
+          ...slot,
+          time: postTimeOrder[index]
+        }));
+        return {
+          ...day,
+          slots: [
+            { ...story, format: "Story", time: "09:00" },
+            ...finalPosts
+          ]
+        };
       });
     }
     aiProfile.weeklyContentCount = Array.isArray(aiProfile.weeklyPlan)
       ? aiProfile.weeklyPlan.reduce(
-          (total: number, day: { slots?: unknown[] }) =>
-            total + (Array.isArray(day.slots) ? day.slots.length : 0),
+          (total: number, day: { slots?: unknown[] }) => total + (Array.isArray(day.slots) ? day.slots.length : 0),
           0
         )
       : 0;
-    aiProfile.dailyContentCount = `${requestedCount} conteúdo${requestedCount===1?"":"s"} por dia`;
+    aiProfile.dailyContentCount = "4 conteúdos por dia: 1 Story + 3 publicações";
     const updated = await db.strategicProfile.update({
       where: { userId: user.id },
       data: { aiProfile, aiAnalyzedAt: new Date() }
