@@ -82,7 +82,7 @@ export default function Dashboard(){
  const ai=isCurrentStrategy(raw)?raw:null;
  let panel:ReactNode;
  if(!ai) panel=<SetupStrategy analyzing={analyzing} analyze={analyze} hasOldStrategy={Boolean(raw)}/>;
- else if(tab==="home") panel=<Home ai={ai} profile={p} name={data.user.name||"criador"} drafts={drafts} onWeek={()=>setTab("week")} onOpenToday={(day,slot)=>{setWeekOpen({day,slot});setTab("week")}}/>;
+ else if(tab==="home") panel=<Home ai={ai} profile={p} name={data.user.name||"criador"} drafts={drafts} onWeek={()=>setTab("week")} onOpenToday={(day,slot)=>{setWeekOpen({day,slot});setTab("week")}} onReanalyze={analyze} analyzing={analyzing}/>;
  else if(tab==="week") panel=<Week ai={ai} trial={data.user.subscription?.status==="TRIALING"} drafts={drafts} onDraftChange={(d)=>setDrafts(v=>v.some(x=>x.id===d.id)?v.map(x=>x.id===d.id?d:x):[...v,d])} openSlot={weekOpen} onConsumeOpen={()=>setWeekOpen(null)}/>;
  else if(tab==="diagnostic") panel=<Diagnostic ai={ai} onAnalyze={auditProfile} analyzing={analyzing}/>;
  else if(tab==="results") panel=<Results profile={p} onNewIdea={()=>setTab("create")}/>;
@@ -124,7 +124,7 @@ function isCurrentStrategy(v:any):v is AIProfile{
  return Boolean(v&&typeof v==="object"&&typeof v.objective==="string"&&Array.isArray(v.weeklyPlan)&&v.weeklyPlan.length===7&&v.weeklyPlan.every((d:any)=>d&&Array.isArray(d.slots)&&d.slots.length===4&&String(d.slots[0]?.format||"").toLowerCase()==="story"));
 }
 function SetupStrategy({analyzing,analyze,hasOldStrategy}:{analyzing:boolean;analyze:()=>void;hasOldStrategy:boolean}){return <div className="feature" style={{marginTop:24}}><div className="badge">{hasOldStrategy?"Atualização":"1º passo"}</div><h2 style={{marginTop:12}}>{hasOldStrategy?"Sua estratégia ganhou a nova programação.":"Vamos transformar seu perfil em um plano."}</h2><p className="muted" style={{marginTop:8,maxWidth:760}}>A IA vai montar diagnóstico, estratégia, semana completa e conteúdos prontos para você executar — 1 Story obrigatório + 3 publicações principais por dia. Os 3 posts são escolhidos pela análise do seu perfil.</p><button className="btn primary" onClick={analyze} disabled={analyzing} style={{marginTop:18}}>{analyzing?"Analisando seu perfil...":hasOldStrategy?"Atualizar minha estratégia →":"Montar minha estratégia →"}</button></div>}
-function Home({ai,profile,name,drafts,onWeek,onOpenToday}:{ai:AIProfile;profile:Profile;name:string;drafts:Draft[];onWeek:()=>void;onOpenToday:(dayIndex:number,slotIndex:number)=>void}){
+function Home({ai,profile,name,drafts,onWeek,onOpenToday,onReanalyze,analyzing}:{ai:AIProfile;profile:Profile;name:string;drafts:Draft[];onWeek:()=>void;onOpenToday:(dayIndex:number,slotIndex:number)=>void;onReanalyze:()=>void;analyzing:boolean}){
  const dayIndex=Math.min(Math.max((new Date().getDay()+6)%7,0),(ai.weeklyPlan?.length||1)-1);
  const today=ai.weeklyPlan?.[dayIndex]||ai.weeklyPlan?.[0];
  const actions=today?.slots||[];
@@ -138,7 +138,7 @@ function Home({ai,profile,name,drafts,onWeek,onOpenToday}:{ai:AIProfile;profile:
      <div><div className="badge">HOJE</div><h1>Olá, {name} 👋</h1><p className="muted">Você não precisa decidir o que postar. Seu próximo passo está aqui.</p></div>
      <div className="scoreMini"><small>Nota do perfil</small><strong>{score??"—"}<span>/100</span></strong><div className="scoreTrack"><i style={{width:`${Math.max(0,Math.min(score||0,100))}%`}}/></div></div>
    </div>
-   <ClientOverview ai={ai} profile={profile} drafts={drafts}/>
+   <ClientOverview ai={ai} profile={profile} drafts={drafts}/>\n   <div className="feature strategyRefresh"><div><div className="badge">🔄 ESTRATÉGIA VIVA</div><strong style={{display:"block",marginTop:8}}>Atualize o plano quando o perfil mudar</strong><p className="small muted" style={{marginTop:5}}>O MidiaNet vai reler seus dados e reconstruir os 7 dias, incluindo o motivo de cada conteúdo, o papel no funil e o sinal que queremos observar.</p></div><button className="btn secondary" onClick={onReanalyze} disabled={analyzing}>{analyzing?"Reanalisando...":"Reanalisar meu perfil"}</button></div>
    <div className="feature todayMainCard">
      <div className="row-between"><div><div className="badge">🚀 O QUE FAZER HOJE</div><h2 style={{marginTop:10}}>{today?.day||"Hoje"}</h2></div><span className="small muted">{actions.length} conteúdo{actions.length===1?"":"s"} hoje</span></div>
      <p className="muted" style={{marginTop:6}}>{today?.mission||"Siga o conteúdo recomendado para hoje."}</p>
