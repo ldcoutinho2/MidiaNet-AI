@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   if (question.length > 1200) return NextResponse.json({ error: "Sua pergunta deve ter até 1.200 caracteres." }, { status: 400 });
 
   const profile = user.strategicProfile;
-  const aiProfile = profile?.aiProfile && typeof profile.aiProfile === "object" ? profile.aiProfile : null;
+  const aiProfile: any = profile?.aiProfile && typeof profile.aiProfile === "object" ? profile.aiProfile : null;
 
   try {
     const response = await openai.responses.create({
