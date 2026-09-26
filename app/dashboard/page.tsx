@@ -230,13 +230,13 @@ function Audit({audit,onAnalyze,analyzing}:{audit?:ProfileAudit;onAnalyze:()=>vo
    ctx.fillStyle="#09090b";ctx.fillRect(0,0,canvas.width,canvas.height);
    ctx.fillStyle="#ffffff";ctx.font="800 64px Arial";ctx.fillText("MidiaNet AI",70,105);
    ctx.fillStyle="#d946ef";ctx.font="700 34px Arial";ctx.fillText("DIAGNÓSTICO DO INSTAGRAM",70,165);
-   ctx.fillStyle="#ffffff";ctx.font="900 170px Arial";ctx.fillText(String(audit.overallScore),70,370);
+   ctx.fillStyle="#ffffff";ctx.font="900 170px Arial";ctx.fillText(String(safeAudit.overallScore),70,370);
    ctx.fillStyle="#a1a1aa";ctx.font="32px Arial";ctx.fillText("/100",330,365);
    ctx.fillStyle="#ffffff";ctx.font="700 34px Arial";ctx.fillText("Como seu perfil está sendo percebido",70,470);
-   const items:[string,number][]=[["Nome e @",audit.nameAndPositioning.score],["Foto de perfil",audit.profilePhoto.score],["Bio",audit.bio.score],["Destaques",audit.highlights.score],["Grade / feed",audit.grid.score],["Frequência",audit.postingFrequency.score],["Conversão",audit.conversion.score]];
+   const items:[string,number][]=[["Nome e @",safeAudit.nameAndPositioning.score],["Foto de perfil",safeAudit.profilePhoto.score],["Bio",safeAudit.bio.score],["Destaques",safeAudit.highlights.score],["Grade / feed",safeAudit.grid.score],["Frequência",safeAudit.postingFrequency.score],["Conversão",safeAudit.conversion.score]];
    let y=560;ctx.font="700 30px Arial";
    for(const [label,score] of items){ctx.fillStyle="#18181b";ctx.fillRect(70,y-34,940,82);ctx.fillStyle="#ffffff";ctx.fillText(label,95,y+5);ctx.fillStyle=score>=70?"#86efac":score>=45?"#fde68a":"#fca5a5";ctx.fillText(score+"/100",850,y+5);y+=105}
-   ctx.fillStyle="#d4d4d8";ctx.font="28px Arial";const lines=(audit.summary||"").match(/.{1,55}(?:\s|$)/g)||[];y+=35;for(const line of lines.slice(0,6)){ctx.fillText(line.trim(),70,y);y+=42}
+   ctx.fillStyle="#d4d4d8";ctx.font="28px Arial";const lines=(safeAudit.summary||"").match(/.{1,55}(?:\s|$)/g)||[];y+=35;for(const line of lines.slice(0,6)){ctx.fillText(line.trim(),70,y);y+=42}
    ctx.fillStyle="#71717a";ctx.font="24px Arial";ctx.fillText("Analise seu perfil. Corrija. Publique. Meça. Melhore.",70,1810);
    const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,"image/png"));if(!blob)return;
    const file=new File([blob],"diagnostico-midianet-ai.png",{type:"image/png"});
@@ -246,20 +246,20 @@ function Audit({audit,onAnalyze,analyzing}:{audit?:ProfileAudit;onAnalyze:()=>vo
 
  if(!audit) return <div className="feature" style={{marginTop:22}}><div className="badge">🔍 Auditoria do perfil</div><h2 style={{marginTop:12}}>Vamos analisar seu Instagram.</h2><p className="muted" style={{marginTop:8}}>A análise usa os dados sincronizados do perfil e os conteúdos públicos disponíveis.</p><button className="btn primary" style={{marginTop:16}} onClick={onAnalyze} disabled={analyzing}>{analyzing?"Analisando perfil...":"🔍 Fazer auditoria agora"}</button></div>;
  const items=[
-   ["Nome e @",audit.nameAndPositioning],
-   ["Foto de perfil",audit.profilePhoto],
-   ["Bio",audit.bio],
-   ["Destaques",audit.highlights],
-   ["Grade / feed",audit.grid],
-   ["Frequência",audit.postingFrequency],
-   ["Conversão",audit.conversion]
+   ["Nome e @",safeAudit.nameAndPositioning],
+   ["Foto de perfil",safeAudit.profilePhoto],
+   ["Bio",safeAudit.bio],
+   ["Destaques",safeAudit.highlights],
+   ["Grade / feed",safeAudit.grid],
+   ["Frequência",safeAudit.postingFrequency],
+   ["Conversão",safeAudit.conversion]
  ] as const;
  const scoreClass=(score:number)=>score>=70?"good":score>=45?"warn":"bad";
  return <div style={{marginTop:8}}>
    <div className="evolutionHero"><div><div className="badge">🔍 DIAGNÓSTICO</div><h2 style={{marginTop:12}}>Como seu perfil está sendo percebido?</h2><p style={{marginTop:7}}>{safeAudit.summary}</p><p className="small muted" style={{marginTop:8}}>A nota é uma referência baseada nos dados disponíveis, não uma verdade objetiva.</p></div><div className="auditScoreHero"><small>NOTA GERAL</small><strong>{safeAudit.overallScore}<span>/100</span></strong><button className="btn primary" style={{marginTop:10}} onClick={onAnalyze} disabled={analyzing}>{analyzing?"Atualizando...":"↻ Atualizar"}</button></div></div>
    <div className="feature" style={{marginTop:14}}><div className="badge">👀 PRIMEIRA IMPRESSÃO</div><p style={{marginTop:10,lineHeight:1.6}}>{safeAudit.firstImpression}</p></div>
    <div className="auditGrid">{items.map(([title,item])=><div className="feature auditItem" key={title}><div className="row-between"><div className="badge">{title}</div><span className={`auditScore ${scoreClass(item.score)}`}>{item.score}/100</span></div><h3 style={{marginTop:12}}>{item.diagnosis}</h3>{"impact" in item&&item.impact&&<p className="small muted" style={{marginTop:7}}><strong>Por que importa:</strong> {item.impact}</p>}<p style={{marginTop:9}}><strong>Como corrigir:</strong> {item.recommendation}</p>{"ctaSuggestion" in item&&item.ctaSuggestion&&<div className="card" style={{marginTop:10}}><small className="muted">CTA SUGERIDO</small><p style={{marginTop:5}}>{item.ctaSuggestion}</p></div>}</div>)}</div>
-   <div className="feature" style={{marginTop:14}}><div className="badge">✨ VERSÃO PRONTA</div><h2 style={{marginTop:10}}>Bio sugerida</h2><div className="card" style={{marginTop:10,whiteSpace:"pre-line",lineHeight:1.6}}>{safeAudit.bio.suggestedBio}</div><div style={{display:"flex",gap:9,flexWrap:"wrap",marginTop:10}}><button className="btn secondary" onClick={()=>navigator.clipboard?.writeText(audit.bio.suggestedBio)}>Copiar bio</button><button className="btn primary" onClick={shareAudit}>📤 Compartilhar diagnóstico</button></div></div>
+   <div className="feature" style={{marginTop:14}}><div className="badge">✨ VERSÃO PRONTA</div><h2 style={{marginTop:10}}>Bio sugerida</h2><div className="card" style={{marginTop:10,whiteSpace:"pre-line",lineHeight:1.6}}>{safeAudit.bio.suggestedBio}</div><div style={{display:"flex",gap:9,flexWrap:"wrap",marginTop:10}}><button className="btn secondary" onClick={()=>navigator.clipboard?.writeText(safeAudit.bio.suggestedBio)}>Copiar bio</button><button className="btn primary" onClick={shareAudit}>📤 Compartilhar diagnóstico</button></div></div>
    <div className="feature" style={{marginTop:14}}><div className="badge">🛠️ CORRIJA EM 5 MINUTOS</div><div style={{display:"grid",gap:8,marginTop:12}}>{safeAudit.priorities.slice(0,3).map((x,i)=><div className="card" key={i}><b>{i+1}.</b> {x}</div>)}</div></div>
    {safeAudit.limitations?.length>0&&<p className="small muted" style={{marginTop:12}}>ℹ️ {safeAudit.limitations.join(" ")}</p>}
  </div>
