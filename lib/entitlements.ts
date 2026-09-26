@@ -53,7 +53,7 @@ export async function getEntitlement(userId: string) {
   };
 }
 
-export async function consumeContentGeneration(userId: string) {
+export async function consumeContentGeneration(userId: string, options?: { dryRun?: boolean }) {
   const e = await getEntitlement(userId);
   if (!e.active) return { ok: false as const, error: "Seu acesso terminou. Escolha um plano para continuar." };
   if (e.contentRemaining <= 0) return { ok: false as const, error: "Você atingiu o limite de gerações de conteúdo do seu plano." };
