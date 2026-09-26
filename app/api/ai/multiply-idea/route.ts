@@ -91,6 +91,8 @@ export async function POST(request: Request) {
     });
 
     if (!response.output_text) return NextResponse.json({ error: "A IA não retornou opções." }, { status: 502 });
+    const finalConsumption = await consumeContentGeneration(user.id);
+    if (!finalConsumption.ok) return NextResponse.json({ error: finalConsumption.error }, { status: 402 });
     return NextResponse.json({ ok: true, options: JSON.parse(response.output_text).options });
   } catch (error) {
     console.error("ai_multiply_idea_error", error);
