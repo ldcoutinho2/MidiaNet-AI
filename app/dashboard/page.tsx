@@ -345,6 +345,7 @@ function Results({profile,onNewIdea}:{profile:Profile;onNewIdea:()=>void}){
  const [saving,setSaving]=useState(false); const [saved,setSaved]=useState(false); const [syncing,setSyncing]=useState(false); const [syncError,setSyncError]=useState("");
  async function load(){const [a,b]=await Promise.all([fetch("/api/metrics/summary").then(r=>r.json()),fetch("/api/metrics/business").then(r=>r.json())]);setData(a);setBusiness(b)}
  useEffect(()=>{load()},[]);
+ const ai:any=profile.aiProfile&&typeof profile.aiProfile==="object"?profile.aiProfile:null;
  const snapshots=Array.isArray(data?.snapshots)?data.snapshots:[];
  const latest=data?.latest, previous=data?.previous;
  const delta=(key:string)=>latest&&previous&&latest[key]!=null&&previous[key]!=null?Number(latest[key])-Number(previous[key]):null;
@@ -364,6 +365,22 @@ function Results({profile,onNewIdea}:{profile:Profile;onNewIdea:()=>void}){
  async function saveBusiness(){setSaving(true);setSaved(false);try{const r=await fetch("/api/metrics/business",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});if(r.ok){const x=await r.json();setBusiness((v:any)=>({snapshots:[x.snapshot,...(v?.snapshots||[])]}));setSaved(true);setForm({instagramDms:"",instagramLeads:"",instagramSales:"",whatsappConversations:"",whatsappLeads:"",whatsappSales:"",salesCount:"",revenue:""})}}finally{setSaving(false)}}
  return <div style={{marginTop:8}}>
   <div className="evolutionHero"><div><div className="badge">📈 RESULTADOS</div><h2 style={{marginTop:12}}>Entenda o que está funcionando</h2><p style={{marginTop:7}}>Sincronize, compare e use os números para decidir o próximo conteúdo.</p></div><button className="btn instagramCta" onClick={syncInstagram} disabled={!data?.connected||syncing}>{syncing?"Sincronizando...":"↻ Sincronizar agora"}</button></div>
+  <div className="resultsDecisionGrid">
+    <div className="decisionCard"><small>✅ ONDE VOCÊ ACERTOU</small><strong>{delta("followers")!=null&&delta("followers")>0?"O perfil ganhou seguidores desde o último registro.":currentBusiness?.salesCount>0?"Já existem vendas registradas para medir a conversão.":ai?.strengths?.[0]||"Ainda estamos construindo uma linha de base."}</strong><p>{ai?.strengths?.[1]||"O próximo ciclo precisa transformar esse sinal em aprendizado."}</p></div>
+    <div className="decisionCard"><small>⚠️ ONDE ESTÁ O ERRO</small><strong>{ai?.profileAudit?.priorities?.[0]||"Ainda não há dados suficientes para apontar um gargalo específico."}</strong><p>{ai?.profileAudit?.priorities?.[1]||"Sincronize o perfil e registre resultados para o diagnóstico ficar mais preciso."}</p></div>
+    <div className="decisionCard"><small>🧠 O QUE FAZER AGORA</small><strong>{ai?.nextAction||"Execute o próximo conteúdo planejado e registre o resultado."}</strong><p>{ai?.weeklyMission||"O MidiaNet vai usar os próximos registros para ajustar a estratégia."}</p></div>
+  </div>
+  <div className="feature resultsFunnel" style={{marginTop:14}}>
+    <div className="badge">🔎 FUNIL DO PERFIL</div><h2 style={{marginTop:10}}>De atenção até resultado</h2>
+    <p className="muted" style={{marginTop:6}}>Não olhe só para curtidas. Cada etapa responde uma pergunta diferente.</p>
+    <div className="resultsFunnelGrid">
+      <div><b>01 · ATENÇÃO</b><strong>{latest?.reach!=null?Number(latest.reach).toLocaleString("pt-BR"):"Sem dado"}</strong><span>alcance disponível</span></div>
+      <div><b>02 · INTERESSE</b><strong>{latest?.views!=null?Number(latest.views).toLocaleString("pt-BR"):"Sem dado"}</strong><span>visualizações disponíveis</span></div>
+      <div><b>03 · CONVERSA</b><strong>{currentBusiness?.instagramDms!=null?Number(currentBusiness.instagramDms).toLocaleString("pt-BR"):"Sem dado"}</strong><span>DMs registradas</span></div>
+      <div><b>04 · VENDA</b><strong>{currentBusiness?.salesCount!=null?Number(currentBusiness.salesCount).toLocaleString("pt-BR"):"Sem dado"}</strong><span>vendas registradas</span></div>
+    </div>
+    <p className="small muted" style={{marginTop:10}}>“Sem dado” é diferente de zero: o MidiaNet não deve inventar uma métrica que o Instagram público não fornece.</p>
+  </div>
   {!data?.connected&&<div className="feature" style={{marginTop:14}}><h3>📸 Conecte seu Instagram</h3><p className="muted" style={{marginTop:6}}>Sem a conta conectada, você ainda pode registrar WhatsApp e vendas manualmente.</p></div>}
   {data?.connected&&<div className="feature" style={{marginTop:14}}><div className="row-between"><div><div className="badge">📊 COMPARAÇÃO</div><h2 style={{marginTop:10}}>@{account?.username||"perfil"}</h2></div><span className="small muted">{snapshots.length} registros</span></div>
     <div className="grid3" style={{marginTop:14}}><Metric title="Seguidores" value={account?.followersCount??latest?.followers} change={delta("followers")}/><Metric title="Curtidas" value={latest?.likes} change={delta("likes")}/><Metric title="Comentários" value={latest?.comments} change={delta("comments")}/><MetricPercent title="Engajamento estimado" value={currentEngagement}/></div>
