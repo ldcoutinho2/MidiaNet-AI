@@ -31,7 +31,15 @@ export async function POST(request: Request) {
         caption: String(slot.caption || ""),
         visualDirection: String(slot.visualDirection || ""),
         cta: String(slot.cta || ""),
-        conversationHistory: []
+        conversationHistory: [{
+          whyItFits: String(slot.whyItFits || ""),
+          audienceProblem: String(slot.audienceProblem || ""),
+          funnelStage: String(slot.funnelStage || ""),
+          desiredAction: String(slot.desiredAction || ""),
+          successSignal: String(slot.successSignal || ""),
+          trendAngle: String(slot.trendAngle || ""),
+          originalityAngle: String(slot.originalityAngle || "")
+        }]
       };
       const saved = existing
         ? await db.contentDraft.update({ where: { id: existing.id }, data })
