@@ -36,13 +36,18 @@ export async function POST(request: Request) {
   }
 
   const currentUser = await getCurrentUser();
+  const occurredAt = new Date(event.occurredAt);
+  if (Number.isNaN(occurredAt.getTime())) {
+    return NextResponse.json({ ok: false, error: "Invalid event date" }, { status: 400 });
+  }
 
   await db.event.create({
     data: {
       name: event.name,
-      occurredAt: new Date(event.occurredAt),
+      occurredAt,
       anonymousId,
-      userId: event.userId || currentUser?.id || null,
+      // Never trust a client-supplied userId. The authenticated session is the source of truth.
+      userId: currentUser?.id || null,
       metadata: event.metadata || {},
     },
   });
