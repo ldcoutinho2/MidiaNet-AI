@@ -67,6 +67,13 @@ export default function CheckoutPage() {
     setConfirmed(false);
 
     const cleanWhatsapp = onlyDigits(whatsapp);
+    const utm: Record<string, string> = {};
+    ["utm_source","utm_medium","utm_campaign","utm_content","utm_term"].forEach((key) => {
+      try {
+        const value = localStorage.getItem("mn_" + key);
+        if (value) utm[key] = value;
+      } catch {}
+    });
     if (!name.trim()) return setError("Informe seu nome.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError("Informe um e-mail válido.");
     if (cleanWhatsapp.length < 10 || cleanWhatsapp.length > 13) return setError("Informe um WhatsApp válido.");
@@ -77,7 +84,7 @@ export default function CheckoutPage() {
       const response = await fetch("/api/payments/mercadopago/pix", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: planKey, name: name.trim(), email: email.trim(), whatsapp: cleanWhatsapp }),
+        body: JSON.stringify({ plan: planKey, name: name.trim(), email: email.trim(), whatsapp: cleanWhatsapp, ...utm }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -85,7 +92,7 @@ export default function CheckoutPage() {
         return;
       }
       setPayment(data);
-      trackEvent({ name: "pix_created", occurredAt: new Date().toISOString(), metadata: { plan: planKey, amount: plan.price } });
+      // O evento pix_created também é registrado no servidor para evitar duplicidade e preservar a atribuição.
     } catch {
       setError("Não foi possível conectar ao pagamento.");
     } finally {
@@ -113,7 +120,7 @@ export default function CheckoutPage() {
           setConfirmed(true);
           if (!approvedTracked) {
             approvedTracked = true;
-            trackEvent({ name: "payment_approved", occurredAt: new Date().toISOString(), metadata: { plan: payment.plan || planKey, paymentId: String(payment.paymentId || "") } });
+            // payment_approved é registrado no servidor no momento em que o pagamento é confirmado.
           }
           if (timer !== undefined) window.clearInterval(timer);
         }
