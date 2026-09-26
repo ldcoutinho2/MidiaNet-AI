@@ -103,19 +103,24 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (!payment?.paymentId) return;
     let active = true;
+    let approvedTracked = false;
+    let timer: number | undefined;
     const check = async () => {
       try {
         const response = await fetch("/api/payments/mercadopago/status?id=" + encodeURIComponent(payment.paymentId), { cache: "no-store" });
         const data = await response.json().catch(() => ({}));
         if (active && data.status === "PAID") {
           setConfirmed(true);
-          trackEvent({ name: "payment_approved", occurredAt: new Date().toISOString(), metadata: { plan: payment.plan || planKey, paymentId: String(payment.paymentId || "") } });
-          window.clearInterval(timer);
+          if (!approvedTracked) {
+            approvedTracked = true;
+            trackEvent({ name: "payment_approved", occurredAt: new Date().toISOString(), metadata: { plan: payment.plan || planKey, paymentId: String(payment.paymentId || "") } });
+          }
+          if (timer !== undefined) window.clearInterval(timer);
         }
       } catch {}
     };
     check();
-    const timer = window.setInterval(check, 4000);
+    timer = window.setInterval(check, 4000);
     return () => {
       active = false;
       window.clearInterval(timer);
