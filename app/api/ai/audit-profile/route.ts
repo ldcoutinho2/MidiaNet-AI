@@ -147,7 +147,6 @@ export async function POST() {
         "Responda exclusivamente no JSON estruturado solicitado."
       ].join("\n"),
       input: [{ role: "user", content: inputContent }],
-      signal: AbortSignal.timeout(90000),
       text: {
         format: {
           type: "json_schema",
