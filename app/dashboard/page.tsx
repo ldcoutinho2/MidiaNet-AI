@@ -353,13 +353,13 @@ function Results({profile,onNewIdea}:{profile:Profile;onNewIdea:()=>void}){
  const snapshots=Array.isArray(data?.snapshots)?data.snapshots:[];
  const latest=data?.latest, previous=data?.previous;
  const publicInteractions=latest?Number(latest.likes||0)+Number(latest.comments||0):null;
- const previousPublicInteractions=previous?Number(previous.likes||0)+Number(previous.comments||0):null;
+ const previousPublicInteractions=previous?Number(previous.likes||0)+Number(previous.likes||0)+Number(previous.comments||0)-Number(previous.likes||0):null;
  const currentConversations=currentBusiness?Number(currentBusiness.instagramDms||0)+Number(currentBusiness.whatsappConversations||0):null;
  const previousConversations=previousBusiness?Number(previousBusiness.instagramDms||0)+Number(previousBusiness.whatsappConversations||0):null;
+ const delta=(key:string)=>latest&&previous&&latest[key]!=null&&previous[key]!=null?Number(latest[key])-Number(previous[key]):null;
  const funnelFollowerDelta=delta("followers");
  const funnelInteractionDelta=publicInteractions!=null&&previousPublicInteractions!=null?publicInteractions-previousPublicInteractions:null;
  const funnelConversationDelta=currentConversations!=null&&previousConversations!=null?currentConversations-previousConversations:null;
- const delta=(key:string)=>latest&&previous&&latest[key]!=null&&previous[key]!=null?Number(latest[key])-Number(previous[key]):null;
  const account=data?.account;
  const media=Array.isArray(account?.mediaCache)?account.mediaCache:[];
  const bestPost=[...media].sort((a:any,b:any)=>(Number(b.like_count||0)+Number(b.comments_count||0))-(Number(a.like_count||0)+Number(a.comments_count||0)))[0];
