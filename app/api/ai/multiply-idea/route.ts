@@ -9,8 +9,8 @@ const schema = {
   properties: {
     options: {
       type: "array",
-      minItems: 5,
-      maxItems: 5,
+      minItems: 3,
+      maxItems: 3,
       items: {
         type: "object",
         additionalProperties: false,
