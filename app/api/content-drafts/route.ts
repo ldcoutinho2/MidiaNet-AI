@@ -25,9 +25,9 @@ export async function POST(req: Request) {
     data: {
       userId: user.id,
       status: "DRAFT",
-      slotKey: null,
-      dayLabel: "Ideias adicionadas",
-      timeLabel: null,
+      slotKey: typeof body.slotKey === "string" ? body.slotKey : null,
+      dayLabel: typeof body.dayLabel === "string" ? body.dayLabel : "Ideias adicionadas",
+      timeLabel: typeof body.timeLabel === "string" ? body.timeLabel : null,
       format: String(body.format || "Reel"),
       role: String(body.role || "Nova ideia"),
       objective: String(body.objective || ""),
