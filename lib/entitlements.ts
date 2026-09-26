@@ -57,8 +57,13 @@ export async function consumeContentGeneration(userId: string, options?: { dryRu
   const e = await getEntitlement(userId);
   if (!e.active) return { ok: false as const, error: "Seu acesso terminou. Escolha um plano para continuar." };
   if (e.contentRemaining <= 0) return { ok: false as const, error: "Você atingiu o limite de gerações de conteúdo do seu plano." };
+  if (options?.dryRun) return { ok: true as const };
   if (e.trialActive) {
-    await db.subscription.update({ where: { userId }, data: { trialContentUsed: { increment: 1 } } });
+    const updated = await db.subscription.updateMany({
+      where: { userId, status: "TRIALING", trialEndsAt: { gt: new Date() }, trialContentUsed: { lt: e.subscription.trialContentLimit } },
+      data: { trialContentUsed: { increment: 1 } },
+    });
+    if (updated.count !== 1) return { ok: false as const, error: "Você atingiu o limite de gerações de conteúdo do teste." };
   } else {
     await db.event.create({ data: { userId, name: "ai_content_generation", metadata: { plan: e.subscription.plan } } });
   }
