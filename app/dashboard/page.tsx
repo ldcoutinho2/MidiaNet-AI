@@ -162,6 +162,7 @@ function ClientOverview({ai,profile,drafts}:{ai:AIProfile;profile:Profile;drafts
  const salesDelta=currentBusiness&&previousBusiness?Number(currentBusiness.salesCount||0)-Number(previousBusiness.salesCount||0):null;
  const revenueDelta=currentBusiness&&previousBusiness?Number(currentBusiness.revenue||0)-Number(previousBusiness.revenue||0):null;
  const auditScore=ai.profileAudit?.overallScore;
+ const followerDelta=delta("followers");
  const goal=profile.ninetyDayGoal||profile.desiredOutcome||ai.objective||"Construir um perfil mais claro e previsível";
  const stage=ai.currentStage||"Diagnóstico inicial";
  const bottleneck=ai.profileAudit?.priorities?.[0]||ai.mainProblem||"Defina o principal gargalo do perfil";
@@ -178,7 +179,7 @@ function ClientOverview({ai,profile,drafts}:{ai:AIProfile;profile:Profile;drafts
     <div className="overviewStep"><b>04</b><strong>Resultado</strong><span>{currentBusiness?(currentBusiness.salesCount||0)+" vendas registradas":"Ainda sem registro"}</span></div>
    </div>
    <div className="overviewGrid">
-    <div className="overviewMetric"><small>👥 SEGUIDORES</small><strong>{metrics?.account?.followersCount!=null?Number(metrics.account?.followersCount).toLocaleString("pt-BR"):"—"}</strong><span>{delta("followers")==null?"Sem comparação":(delta("followers")>=0?"+":"")+delta("followers").toLocaleString("pt-BR")+" desde o último registro"}</span></div>
+    <div className="overviewMetric"><small>👥 SEGUIDORES</small><strong>{metrics?.account?.followersCount!=null?Number(metrics.account?.followersCount).toLocaleString("pt-BR"):"—"}</strong><span>{followerDelta==null?"Sem comparação":(followerDelta>=0?"+":"")+followerDelta.toLocaleString("pt-BR")+" desde o último registro"}</span></div>
     <div className="overviewMetric"><small>💬 INTERAÇÕES DA AMOSTRA</small><strong>{latest?.likes!=null||latest?.comments!=null?(Number(latest?.likes||0)+Number(latest?.comments||0)).toLocaleString("pt-BR"):"—"}</strong><span>curtidas + comentários dos conteúdos sincronizados</span></div>
     <div className="overviewMetric"><small>📅 CONSISTÊNCIA</small><strong>{consistency}%</strong><span>{published} de {total} conteúdos publicados</span></div>
     <div className="overviewMetric"><small>💰 CONVERSÃO</small><strong>{currentBusiness?"R$ "+Number(currentBusiness.revenue||0).toFixed(2):"—"}</strong><span>{currentBusiness?(currentBusiness.salesCount||0)+" vendas · "+(currentBusiness.instagramLeads||0)+" leads IG":"Registre seus resultados para medir"}</span></div>
