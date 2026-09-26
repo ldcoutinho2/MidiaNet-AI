@@ -75,6 +75,7 @@ export default function Dashboard(){
  else if(tab==="week") panel=<Week ai={ai} drafts={drafts} onDraftChange={(d)=>setDrafts(v=>v.some(x=>x.id===d.id)?v.map(x=>x.id===d.id?d:x):[...v,d])}/>;
  else if(tab==="diagnostic") panel=<Diagnostic ai={ai} onAnalyze={auditProfile} analyzing={analyzing}/>;
  else if(tab==="results") panel=<Results profile={p}/>;
+ else if(tab==="create") panel=<Create/>;
  else panel=<Account user={data.user} profile={p} router={router}/>;
 
  return <main className="page dashboardPage">
