@@ -22,6 +22,7 @@ export default function Dashboard(){
  const router=useRouter();
  const [data,setData]=useState<Me|null>(null);
  const [drafts,setDrafts]=useState<Draft[]>([]);
+ const [weekOpen,setWeekOpen]=useState<{day:number;slot:number}|null>(null);
  const [loading,setLoading]=useState(true);
  const [tab,setTab]=useState("home");
  const [analyzing,setAnalyzing]=useState(false);
@@ -73,8 +74,8 @@ export default function Dashboard(){
  const ai=isCurrentStrategy(raw)?raw:null;
  let panel:ReactNode;
  if(!ai) panel=<SetupStrategy analyzing={analyzing} analyze={analyze} hasOldStrategy={Boolean(raw)}/>;
- else if(tab==="home") panel=<Home ai={ai} name={data.user.name||"criador"} drafts={drafts} onWeek={()=>setTab("week")}/>;
- else if(tab==="week") panel=<Week ai={ai} trial={data.user.subscription?.status==="TRIALING"} drafts={drafts} onDraftChange={(d)=>setDrafts(v=>v.some(x=>x.id===d.id)?v.map(x=>x.id===d.id?d:x):[...v,d])}/>;
+ else if(tab==="home") panel=<Home ai={ai} name={data.user.name||"criador"} drafts={drafts} onWeek={()=>setTab("week")} onOpenToday={(day,slot)=>{setWeekOpen({day,slot});setTab("week")}}/>;
+ else if(tab==="week") panel=<Week ai={ai} trial={data.user.subscription?.status==="TRIALING"} drafts={drafts} onDraftChange={(d)=>setDrafts(v=>v.some(x=>x.id===d.id)?v.map(x=>x.id===d.id?d:x):[...v,d])} openSlot={weekOpen} onConsumeOpen={()=>setWeekOpen(null)}/>;
  else if(tab==="diagnostic") panel=<Diagnostic ai={ai} onAnalyze={auditProfile} analyzing={analyzing}/>;
  else if(tab==="results") panel=<Results profile={p}/>;
  else if(tab==="create") panel=<Create ai={ai} drafts={drafts} onDraftChange={(d)=>setDrafts(v=>v.some(x=>x.id===d.id)?v.map(x=>x.id===d.id?d:x):[...v,d])}/>;
@@ -114,7 +115,7 @@ function isCurrentStrategy(v:any):v is AIProfile{
  return Boolean(v&&typeof v==="object"&&typeof v.objective==="string"&&Array.isArray(v.weeklyPlan)&&v.weeklyPlan.length>=2&&v.weeklyPlan.length<=7&&v.weeklyPlan.every((d:any)=>d&&Array.isArray(d.slots)&&d.slots.length>=1&&d.slots.length<=3));
 }
 function SetupStrategy({analyzing,analyze,hasOldStrategy}:{analyzing:boolean;analyze:()=>void;hasOldStrategy:boolean}){return <div className="feature" style={{marginTop:24}}><div className="badge">{hasOldStrategy?"Atualização":"1º passo"}</div><h2 style={{marginTop:12}}>{hasOldStrategy?"Sua estratégia ganhou a nova programação.":"Vamos transformar seu perfil em um plano."}</h2><p className="muted" style={{marginTop:8,maxWidth:760}}>A IA vai montar diagnóstico, estratégia, semana completa e conteúdos prontos para você executar — 1 a 3 conteúdos por dia, conforme sua estratégia.</p><button className="btn primary" onClick={analyze} disabled={analyzing} style={{marginTop:18}}>{analyzing?"Analisando seu perfil...":hasOldStrategy?"Atualizar minha estratégia →":"Montar minha estratégia →"}</button></div>}
-function Home({ai,name,drafts,onWeek}:{ai:AIProfile;name:string;drafts:Draft[];onWeek:()=>void}){
+function Home({ai,name,drafts,onWeek,onOpenToday}:{ai:AIProfile;name:string;drafts:Draft[];onWeek:()=>void;onOpenToday:(dayIndex:number,slotIndex:number)=>void}){
  const dayIndex=Math.min(Math.max((new Date().getDay()+6)%7,0),(ai.weeklyPlan?.length||1)-1);
  const today=ai.weeklyPlan?.[dayIndex]||ai.weeklyPlan?.[0];
  const actions=today?.slots||[];
@@ -129,17 +130,18 @@ function Home({ai,name,drafts,onWeek}:{ai:AIProfile;name:string;drafts:Draft[];o
    <div className="feature todayMainCard">
      <div className="row-between"><div><div className="badge">🚀 O QUE FAZER HOJE</div><h2 style={{marginTop:10}}>{today?.day||"Hoje"}</h2></div><span className="small muted">{actions.length} conteúdo{actions.length===1?"":"s"} hoje</span></div>
      <p className="muted" style={{marginTop:6}}>{today?.mission||"Siga o conteúdo recomendado para hoje."}</p>
-     <div className="todayContentList">{actions.map((s,i)=>{const draft=drafts.find(d=>d.slotKey===`${dayIndex}:${i}`);const posted=draft?.status==="PUBLISHED";return <button className="todayContentItem" key={i} onClick={onWeek}><span className="todayTime">{s.time}</span><span className="todayFormat">{fmtIcon[s.format]||"✨"} {s.format}</span><strong>{s.title}</strong><span className="todayArrow">{posted?"✓":"→"}</span></button>})}</div>
+     <div className="todayContentList">{actions.map((s,i)=>{const draft=drafts.find(d=>d.slotKey===`${dayIndex}:${i}`);const posted=draft?.status==="PUBLISHED";return <button className="todayContentItem" key={i} onClick={()=>onOpenToday(dayIndex,i)}><span className="todayTime">{s.time}</span><span className="todayFormat">{fmtIcon[s.format]||"✨"} {s.format}</span><strong>{s.title}</strong><span className="todayArrow">{posted?"✓":"→"}</span></button>})}</div>
      <button className="btn primary full" style={{marginTop:12}} onClick={onWeek}>Abrir conteúdo de hoje →</button>
    </div>
    <div className="weekProgressCard feature"><div className="row-between"><strong>📅 Progresso da semana</strong><span>{completedDays} de 7 dias concluídos</span></div><div className="weekTrack"><i style={{width:`${progress}%`}}/></div><p className="small muted" style={{marginTop:7}}>Marque os conteúdos como postados dentro de cada publicação.</p></div>
    <div className="feature quickFix"><div className="badge">🛠️ Corrija em 5 minutos</div><h2 style={{marginTop:10}}>Comece por estas 3 correções</h2><div className="quickFixList">{(ai.profileAudit?.priorities||["Revise sua bio","Deixe seu CTA mais claro","Escolha um tema principal para a semana"]).slice(0,3).map((x,i)=><div className="card" key={i}><b>{i+1}.</b> {x}</div>)}</div></div>
  </div>
 }
-function Week({ai,trial,drafts,onDraftChange}:{ai:AIProfile;trial:boolean;drafts:Draft[];onDraftChange:(d:Draft)=>void}){
+function Week({ai,trial,drafts,onDraftChange,openSlot,onConsumeOpen}:{ai:AIProfile;trial:boolean;drafts:Draft[];onDraftChange:(d:Draft)=>void;openSlot?:{day:number;slot:number}|null;onConsumeOpen:()=>void}){
  const [selected,setSelected]=useState<{slot:Slot;day:string;draft?:Draft}|null>(null);
- const [dayIndex,setDayIndex]=useState(0);
+ const [dayIndex,setDayIndex]=useState(openSlot?.day||0);
  const day=ai.weeklyPlan?.[dayIndex]||ai.weeklyPlan?.[0];
+ useEffect(()=>{if(openSlot){setDayIndex(openSlot.day);const d=ai.weeklyPlan?.[openSlot.day];const slot=d?.slots?.[openSlot.slot];if(slot){const draft=drafts.find(x=>x.slotKey===`${openSlot.day}:${openSlot.slot}`);setSelected({slot:draft?.title?{...slot,title:draft.title,format:draft.format||slot.format,objective:draft.objective||slot.objective,hook:draft.hook||slot.hook,script:draft.script||slot.script,caption:draft.caption||slot.caption,visualDirection:draft.visualDirection||slot.visualDirection,cta:draft.cta||slot.cta}:slot,day:d.day,draft});}onConsumeOpen()}},[openSlot]);
  return <div style={{marginTop:8}}>
    <div className="feature weekTop"><div className="badge">SEMANA</div><h2 style={{marginTop:10}}>Sua semana pronta</h2><p className="muted" style={{marginTop:6}}>Escolha o dia e abra qualquer conteúdo para copiar, ajustar e marcar como postado.</p><div className="small muted" style={{marginTop:10}}>Ritmo atual: {ai.dailyContentCount||"2 conteúdos por dia"}</div>{trial&&<div className="trialLockBanner">🎁 No teste grátis, o primeiro dia está liberado. Os outros dias ficam bloqueados até liberar a semana.</div>}</div>
    <div className="dayTabs">{ai.weeklyPlan.map((d,i)=>{const locked=trial&&i>0;return <button key={i} className={i===dayIndex?"active":""} disabled={locked} onClick={()=>!locked&&setDayIndex(i)}>{locked?"🔒":" "}{d.day.slice(0,3)}</button>})}</div>
