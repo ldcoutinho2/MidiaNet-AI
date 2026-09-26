@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { trackEvent } from "@/lib/events";
 
 type Slot = { time:string; format:string; role:string; objective:string; title:string; topic:string; hook:string; script:string; caption:string; visualDirection:string; cta:string; executionSteps:string[] };
 type Draft = { id:string; slotKey:string|null; status:"IDEA"|"DRAFT"|"APPROVED"|"SCHEDULED"|"PUBLISHED"; dayLabel:string|null; timeLabel:string|null; title:string; format?:string; objective?:string|null; hook?:string|null; script?:string|null; caption?:string|null; visualDirection?:string|null; cta?:string|null; approvedAt?:string|null; publishedAt?:string|null };
@@ -44,6 +45,7 @@ export default function Dashboard(){
  async function logout(){await fetch("/api/auth/logout",{method:"POST"});router.replace("/")}
 
  async function analyze(){
+   trackEvent({name:"diagnostic_started",occurredAt:new Date().toISOString(),metadata:{source:"dashboard"}});
    setAnalyzing(true);setError("");
    try{
      const r=await fetch("/api/ai/analyze-profile",{method:"POST"});
@@ -53,16 +55,19 @@ export default function Dashboard(){
      await fetch("/api/content-drafts/sync",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({weeklyPlan:x.aiProfile.weeklyPlan})});
      const draftsResponse=await fetch("/api/content-drafts");
      if(draftsResponse.ok){const v=await draftsResponse.json();if(v?.drafts)setDrafts(v.drafts)}
+     trackEvent({name:"diagnostic_completed",occurredAt:new Date().toISOString(),metadata:{source:"dashboard"}});
      setTab("home")
    }catch{setError("Não foi possível conectar à IA.")}finally{setAnalyzing(false)}
  }
 
  async function auditProfile(){
+   trackEvent({name:"diagnostic_started",occurredAt:new Date().toISOString(),metadata:{source:"audit"}});
    setAnalyzing(true);setError("");
    try{
      const r=await fetch("/api/ai/audit-profile",{method:"POST"});
      const text=await r.text();let x:any={};try{x=text?JSON.parse(text):{}}catch{}
      if(!r.ok){setError(x.error||`A auditoria falhou (HTTP ${r.status}).`);return}
+     trackEvent({name:"diagnostic_completed",occurredAt:new Date().toISOString(),metadata:{source:"audit"}});
      setData((d:any)=>d?.user.strategicProfile?{...d,user:{...d.user,strategicProfile:{...d.user.strategicProfile,aiProfile:{...(d.user.strategicProfile.aiProfile||{}),profileAudit:x.profileAudit},aiAnalyzedAt:x.aiAnalyzedAt}}}:d)
    }catch(e){setError(e instanceof Error?e.message:"Não foi possível atualizar a auditoria.")}finally{setAnalyzing(false)}
  }
@@ -90,6 +95,7 @@ export default function Dashboard(){
      </div>
    </nav>
    <section className="section dashboardSection">
+     {entitlement && (data.user.subscription?.status==="TRIALING" || entitlement.contentRemaining===0 || entitlement.imageRemaining===0) && <div className="feature" style={{marginBottom:12,padding:16,border:"1px solid rgba(255,255,255,.12)"}}><div className="row-between"><div><div className="badge">{data.user.subscription?.status==="TRIALING"?"🎁 TESTE GRÁTIS":"🚀 ACESSO ATIVO"}</div><strong style={{display:"block",marginTop:8}}>{data.user.subscription?.status==="TRIALING"?"Você está no teste grátis. Libere o acesso completo quando quiser.":"Seu limite de uso chegou ao fim."}</strong><p className="small muted" style={{marginTop:5}}>Conteúdo: {entitlement.contentRemaining}/{entitlement.contentLimit} · Imagens: {entitlement.imageRemaining}/{entitlement.imageLimit}</p></div><button className="btn primary" onClick={()=>{trackEvent({name:"upgrade_clicked",occurredAt:new Date().toISOString(),metadata:{source:"dashboard",plan:"monthly"}});router.push("/checkout?plan=monthly")}}>Liberar acesso →</button></div></div>}
      <div className="instagramStrip">
        <div className="igAvatar" style={{overflow:"hidden"}}>
          {data.user.socialAccounts?.[0]?.profilePictureUrl?<img src={data.user.socialAccounts[0].profilePictureUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:"◎"}
