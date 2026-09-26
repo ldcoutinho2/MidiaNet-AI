@@ -11,54 +11,126 @@ type AIProfile = { objective:string; currentStage:string; diagnosis:string; main
 type Profile = Record<string,any> & { aiProfile?:AIProfile|null; aiAnalyzedAt?:string|null };
 type Me = { user:{name:string|null;email:string;phone?:string|null;strategicProfile:Profile|null;subscription?:any|null;socialAccounts?:{id:string;platform:string;username:string|null;fullName?:string|null;biography?:string|null;website?:string|null;profilePictureUrl?:string|null;followersCount?:number|null;followsCount?:number|null;mediaCount?:number|null;lastSyncedAt?:string|null;connectedAt:string}[]} };
 
-const tabs=[["home","🏠 Meu Instagram"],["audit","🔍 Auditoria"],["strategy","🎯 Estratégia"],["week","📅 Minha semana"],["create","✨ Criar"],["results","📈 Evolução"],["profile","👤 Meu perfil"],["plans","💳 Planos"]] as const;
+const tabs=[
+  ["home","Hoje","⌂"],["week","Semana","▦"],["diagnostic","Diagnóstico","◉"],["results","Resultados","↗"],["account","Conta","●"]
+] as const;
 const fmtIcon:Record<string,string>={Story:"⚡",Foto:"📸",Post:"📸",Reel:"🎬",Vídeo:"🎬",Carrossel:"📚"};
 
 export default function Dashboard(){
- const router=useRouter(); const [data,setData]=useState<Me|null>(null); const [drafts,setDrafts]=useState<Draft[]>([]); const [loading,setLoading]=useState(true); const [tab,setTab]=useState("home"); const [analyzing,setAnalyzing]=useState(false); const [error,setError]=useState("");
- useEffect(()=>{fetch("/api/auth/me").then(async r=>{if(!r.ok){router.replace("/login");return null}return r.json()}).then(x=>{if(x){if(!x.user.strategicProfile?.onboardingCompletedAt){router.replace("/setup");return}setData(x);fetch("/api/content-drafts").then(r=>r.ok?r.json():null).then(v=>{if(v?.drafts)setDrafts(v.drafts)}).catch(()=>{})}}).finally(()=>setLoading(false))},[router]);
+ const router=useRouter();
+ const [data,setData]=useState<Me|null>(null);
+ const [drafts,setDrafts]=useState<Draft[]>([]);
+ const [loading,setLoading]=useState(true);
+ const [tab,setTab]=useState("home");
+ const [analyzing,setAnalyzing]=useState(false);
+ const [error,setError]=useState("");
+
+ useEffect(()=>{
+   fetch("/api/auth/me").then(async r=>{
+     if(!r.ok){router.replace("/login");return null}
+     return r.json()
+   }).then(x=>{
+     if(x){
+       if(!x.user.strategicProfile?.onboardingCompletedAt){router.replace("/setup");return}
+       setData(x);
+       fetch("/api/content-drafts").then(r=>r.ok?r.json():null).then(v=>{if(v?.drafts)setDrafts(v.drafts)}).catch(()=>{})
+     }
+   }).finally(()=>setLoading(false))
+ },[router]);
+
  async function logout(){await fetch("/api/auth/logout",{method:"POST"});router.replace("/")}
- async function analyze(){setAnalyzing(true);setError("");try{const r=await fetch("/api/ai/analyze-profile",{method:"POST"});const x=await r.json();if(!r.ok){setError(x.error||"Não foi possível montar sua estratégia.");return}setData(d=>d?.user.strategicProfile?{...d,user:{...d.user,strategicProfile:{...d.user.strategicProfile,aiProfile:x.aiProfile,aiAnalyzedAt:x.aiAnalyzedAt}}}:d);await fetch("/api/content-drafts/sync",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({weeklyPlan:x.aiProfile.weeklyPlan})});setTab("home")}catch{setError("Não foi possível conectar à IA.")}finally{setAnalyzing(false)}}
- async function auditProfile(){setAnalyzing(true);setError("");try{const r=await fetch("/api/ai/audit-profile",{method:"POST"});const text=await r.text();let x:any={};try{x=text?JSON.parse(text):{}}catch{}if(!r.ok){setError(x.error||`A auditoria falhou (HTTP ${r.status}).`);return}setData((d:any)=>d?.user.strategicProfile?{...d,user:{...d.user,strategicProfile:{...d.user.strategicProfile,aiProfile:{...(d.user.strategicProfile.aiProfile||{}),profileAudit:x.profileAudit},aiAnalyzedAt:x.aiAnalyzedAt}}}:d)}catch(e){setError(e instanceof Error?e.message:"Não foi possível atualizar a auditoria.")}finally{setAnalyzing(false)}}
- if(loading)return <main className="auth"><div className="authbox"><p className="muted">Carregando seu painel...</p></div></main>; if(!data)return null;
- const p=data.user.strategicProfile!; const raw=p.aiProfile; const ai=isCurrentStrategy(raw)?raw:null;
- let panel: ReactNode;
- if (!ai) panel = <SetupStrategy analyzing={analyzing} analyze={analyze} hasOldStrategy={Boolean(raw)} />;
- else if (tab === "home") panel = <Home ai={ai} onWeek={()=>setTab("week")} />;
- else if (tab === "audit") panel = <Audit audit={ai.profileAudit} onAnalyze={auditProfile} analyzing={analyzing} />;
- else if (tab === "strategy") panel = <Strategy ai={ai} />;
- else if (tab === "week") panel = <Week ai={ai} drafts={drafts} onDraftChange={(d)=>setDrafts(v=>v.some(x=>x.id===d.id)?v.map(x=>x.id===d.id?d:x):[...v,d])} />;
- else if (tab === "create") panel = <Create />;
- else if (tab === "results") panel = <Results profile={p} />;
- else if (tab === "profile") panel = <ProfileView profile={p} router={router} />;
- else panel = <Plans subscription={data.user.subscription} />;
- return <main className="page"><nav className="nav"><div className="logo">MidiaNet<span>AI</span></div><button className="muted" onClick={logout} style={{background:"none",border:0,cursor:"pointer"}}>Sair</button></nav><section className="section" style={{paddingTop:28}}>
-  <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:8}}>{tabs.map(([id,label])=><button key={id} className={tab===id?"btn primary":"btn secondary"} onClick={()=>setTab(id)} style={{whiteSpace:"nowrap"}}>{label}</button>)}</div>
-  <div style={{marginTop:24}}><div className="instagramStrip"><div className="igAvatar" style={{overflow:"hidden"}}>{data.user.socialAccounts?.[0]?.profilePictureUrl?<img src={data.user.socialAccounts[0].profilePictureUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:"◎"}</div><div style={{flex:1}}><strong>{data.user.socialAccounts?.[0]?.username ? "@"+data.user.socialAccounts[0].username : p.instagramProfileUrl || "Seu Instagram"}</strong><div className="small muted">{data.user.socialAccounts?.length ? "Conta conectada · métricas disponíveis quando sincronizadas" : "Conta ainda não conectada · você pode usar o MidiaNet AI sem conectar"}</div></div><div className="badge">{data.user.subscription?.status==="TRIALING"?"🧪 Teste ativo":"✓ Plano ativo"}</div></div><div style={{marginTop:24}}><div className="badge">Seu estrategista</div><h1 style={{fontSize:40,letterSpacing:-2,margin:"14px 0 8px"}}>Olá, {data.user.name||"criador"}.</h1><p className="muted">Você não precisa descobrir o que postar. O MidiaNet AI organiza o próximo passo.</p></div>
-  {error&&<p className="small" style={{color:"#fda4af",marginTop:14}}>{error}</p>}
-  </div>
-  {panel}
- </section></main>;
+
+ async function analyze(){
+   setAnalyzing(true);setError("");
+   try{
+     const r=await fetch("/api/ai/analyze-profile",{method:"POST"});
+     const x=await r.json();
+     if(!r.ok){setError(x.error||"Não foi possível montar sua estratégia.");return}
+     setData(d=>d?.user.strategicProfile?{...d,user:{...d.user,strategicProfile:{...d.user.strategicProfile,aiProfile:x.aiProfile,aiAnalyzedAt:x.aiAnalyzedAt}}}:d);
+     await fetch("/api/content-drafts/sync",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({weeklyPlan:x.aiProfile.weeklyPlan})});
+     const draftsResponse=await fetch("/api/content-drafts");
+     if(draftsResponse.ok){const v=await draftsResponse.json();if(v?.drafts)setDrafts(v.drafts)}
+     setTab("home")
+   }catch{setError("Não foi possível conectar à IA.")}finally{setAnalyzing(false)}
+ }
+
+ async function auditProfile(){
+   setAnalyzing(true);setError("");
+   try{
+     const r=await fetch("/api/ai/audit-profile",{method:"POST"});
+     const text=await r.text();let x:any={};try{x=text?JSON.parse(text):{}}catch{}
+     if(!r.ok){setError(x.error||`A auditoria falhou (HTTP ${r.status}).`);return}
+     setData((d:any)=>d?.user.strategicProfile?{...d,user:{...d.user,strategicProfile:{...d.user.strategicProfile,aiProfile:{...(d.user.strategicProfile.aiProfile||{}),profileAudit:x.profileAudit},aiAnalyzedAt:x.aiAnalyzedAt}}}:d)
+   }catch(e){setError(e instanceof Error?e.message:"Não foi possível atualizar a auditoria.")}finally{setAnalyzing(false)}
+ }
+
+ if(loading)return <main className="auth"><div className="authbox"><p className="muted">Carregando seu painel...</p></div></main>;
+ if(!data)return null;
+ const p=data.user.strategicProfile!;
+ const raw=p.aiProfile;
+ const ai=isCurrentStrategy(raw)?raw:null;
+ let panel:ReactNode;
+ if(!ai) panel=<SetupStrategy analyzing={analyzing} analyze={analyze} hasOldStrategy={Boolean(raw)}/>;
+ else if(tab==="home") panel=<Home ai={ai} onWeek={()=>setTab("week")}/>;
+ else if(tab==="week") panel=<Week ai={ai} drafts={drafts} onDraftChange={(d)=>setDrafts(v=>v.some(x=>x.id===d.id)?v.map(x=>x.id===d.id?d:x):[...v,d])}/>;
+ else if(tab==="diagnostic") panel=<Diagnostic ai={ai} onAnalyze={auditProfile} analyzing={analyzing}/>;
+ else if(tab==="results") panel=<Results profile={p}/>;
+ else panel=<Account user={data.user} profile={p} router={router}/>;
+
+ return <main className="page dashboardPage">
+   <nav className="nav dashboardNav">
+     <div className="logo">MidiaNet<span>AI</span></div>
+     <div className="dashboardTopActions">
+       <span className="small muted">{data.user.subscription?.status==="TRIALING"?"🧪 Teste ativo":"✓ Plano ativo"}</span>
+       <button className="muted logoutButton" onClick={logout}>Sair</button>
+     </div>
+   </nav>
+   <section className="section dashboardSection">
+     <div className="instagramStrip">
+       <div className="igAvatar" style={{overflow:"hidden"}}>
+         {data.user.socialAccounts?.[0]?.profilePictureUrl?<img src={data.user.socialAccounts[0].profilePictureUrl} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:"◎"}
+       </div>
+       <div style={{flex:1,minWidth:0}}>
+         <strong>{data.user.socialAccounts?.[0]?.username ? "@"+data.user.socialAccounts[0].username : p.instagramProfileUrl || "Seu Instagram"}</strong>
+         <div className="small muted">{data.user.socialAccounts?.length?"Conta conectada":"Perfil ainda não conectado"}</div>
+       </div>
+     </div>
+     {error&&<p className="small dashboardError">{error}</p>}
+     <div className="dashboardPanel">{panel}</div>
+   </section>
+
+   <button className="newIdeaFloat" onClick={()=>setTab("create")} aria-label="Nova ideia"><span>＋</span> Nova ideia</button>
+
+   <nav className="bottomNav" aria-label="Navegação principal">
+     {tabs.map(([id,label,icon])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}><span className="bottomIcon">{icon}</span><span>{label}</span></button>)}
+   </nav>
+ </main>;
 }
-function isCurrentStrategy(v:any):v is AIProfile{return Boolean(v&&typeof v==="object"&&typeof v.objective==="string"&&Array.isArray(v.weeklyPlan)&&(v.weeklyPlan.length===2||v.weeklyPlan.length===7)&&v.weeklyPlan.every((d:any)=>d&&Array.isArray(d.slots)&&d.slots.length===4))}
+
+function isCurrentStrategy(v:any):v is AIProfile{
+ return Boolean(v&&typeof v==="object"&&typeof v.objective==="string"&&Array.isArray(v.weeklyPlan)&&v.weeklyPlan.length>=2&&v.weeklyPlan.length<=7&&v.weeklyPlan.every((d:any)=>d&&Array.isArray(d.slots)&&d.slots.length>=1&&d.slots.length<=4));
+}
 function SetupStrategy({analyzing,analyze,hasOldStrategy}:{analyzing:boolean;analyze:()=>void;hasOldStrategy:boolean}){return <div className="feature" style={{marginTop:24}}><div className="badge">{hasOldStrategy?"Atualização":"1º passo"}</div><h2 style={{marginTop:12}}>{hasOldStrategy?"Sua estratégia ganhou a nova programação.":"Vamos transformar seu perfil em um plano."}</h2><p className="muted" style={{marginTop:8,maxWidth:760}}>A IA vai montar diagnóstico, estratégia, semana completa e conteúdos prontos para você executar — 1 Story + 3 publicações principais por dia.</p><button className="btn primary" onClick={analyze} disabled={analyzing} style={{marginTop:18}}>{analyzing?"Analisando seu perfil...":hasOldStrategy?"Atualizar minha estratégia →":"Montar minha estratégia →"}</button></div>}
 function Home({ai,onWeek}:{ai:AIProfile;onWeek:()=>void}){
- const today=useMemo(()=>ai.weeklyPlan?.[0],[ai.weeklyPlan]);
- const actions=today?.slots?.slice(0,3)||[];
- return <>
-  <div className="grid3" style={{marginTop:22}}><Info title="🎯 Meu objetivo" value={ai.objective}/><Info title="📍 Onde estou" value={ai.currentStage}/><Info title="🚧 Principal problema" value={ai.mainProblem}/></div>
-  <div className="feature" style={{marginTop:18}}><div className="badge">🧭 Direção</div><h2 style={{marginTop:12}}>O que vamos fazer</h2><p style={{marginTop:8}}>{ai.strategy}</p><div className="grid3" style={{marginTop:18}}><Info title="📅 Frequência" value={ai.postingFrequency}/><Info title="🔥 Missão da semana" value={ai.weeklyMission}/><Info title="👉 Próximo passo" value={ai.nextAction}/></div></div>
-  {today&&<>
-   <div className="feature" style={{marginTop:18,border:"1px solid rgba(255,255,255,.12)"}}>
-    <div className="badge">🚀 O QUE FAZER HOJE</div>
-    <h2 style={{marginTop:12}}>Seu próximo passo é simples</h2>
-    <p className="muted" style={{marginTop:6}}>{today.day} · {today.mission}</p>
-    <div style={{display:"grid",gap:10,marginTop:14}}>{actions.map((s,i)=><div className="card" key={i} style={{display:"flex",gap:12,alignItems:"center"}}><div className="badge">{i+1}</div><div style={{flex:1}}><strong>{fmtIcon[s.format]||"✨"} {s.time} · {s.title}</strong><p className="small muted" style={{marginTop:4}}>{s.objective}</p></div></div>)}</div>
-    <div className="row" style={{marginTop:14,flexWrap:"wrap"}}><button className="btn primary" onClick={onWeek}>Abrir conteúdo de hoje →</button><span className="small muted">Escolha um item para ver gancho, roteiro, legenda e CTA.</span></div>
+ const dayIndex=Math.min(Math.max((new Date().getDay()+6)%7,0),(ai.weeklyPlan?.length||1)-1);
+ const today=ai.weeklyPlan?.[dayIndex]||ai.weeklyPlan?.[0];
+ const actions=today?.slots||[];
+ const score=ai.profileAudit?.overallScore;
+ const published=0;
+ return <div className="todayPage">
+   <div className="todayHeader">
+     <div><div className="badge">HOJE</div><h1>Olá, {ai.objective? "criador":"criador"} 👋</h1><p className="muted">Seu próximo passo está aqui. Não precisa decidir o que postar.</p></div>
+     <div className="scoreMini"><small>Nota do perfil</small><strong>{score??"—"}<span>/100</span></strong><div className="scoreTrack"><i style={{width:`${Math.max(0,Math.min(score||0,100))}%`}}/></div></div>
    </div>
-  </>}
-  {today&&<div className="feature" style={{marginTop:18}}><div className="badge">📅 Semana</div><h2 style={{marginTop:12}}>{today.day}</h2><p className="muted" style={{marginTop:6}}>{today.mission}</p><div className="grid2" style={{marginTop:14}}>{today.slots.map((s,i)=><MiniSlot key={i} slot={s}/>)}</div><button className="btn secondary" onClick={onWeek} style={{marginTop:14}}>Ver minha semana completa →</button></div>}
- </>
+   <div className="feature todayMainCard">
+     <div className="row-between"><div><div className="badge">🚀 O QUE FAZER HOJE</div><h2 style={{marginTop:10}}>{today?.day||"Hoje"}</h2></div><span className="small muted">{actions.length} conteúdo{actions.length===1?"":"s"} hoje</span></div>
+     <p className="muted" style={{marginTop:6}}>{today?.mission||"Siga o conteúdo recomendado para hoje."}</p>
+     <div className="todayContentList">{actions.map((s,i)=><button className="todayContentItem" key={i} onClick={onWeek}><span className="todayTime">{s.time}</span><span className="todayFormat">{fmtIcon[s.format]||"✨"} {s.format}</span><strong>{s.title}</strong><span className="todayArrow">→</span></button>)}</div>
+     <button className="btn primary full" style={{marginTop:12}} onClick={onWeek}>Abrir conteúdo de hoje →</button>
+   </div>
+   <div className="weekProgressCard feature"><div className="row-between"><strong>📅 Progresso da semana</strong><span>0 de 7 dias concluídos</span></div><div className="weekTrack"><i style={{width:"0%"}}/></div><p className="small muted" style={{marginTop:7}}>Marque os conteúdos como postados para acompanhar seu ritmo.</p></div>
+   <div className="feature quickFix"><div className="badge">🛠️ Corrija em 5 minutos</div><h2 style={{marginTop:10}}>Comece por estas correções</h2><div className="quickFixList">{(ai.profileAudit?.priorities||["Revise sua bio","Deixe seu CTA mais claro","Escolha um tema principal para a semana"]).slice(0,3).map((x,i)=><div className="card" key={i}><b>{i+1}.</b> {x}</div>)}</div></div>
+ </div>
 }
 function Audit({audit,onAnalyze,analyzing}:{audit?:ProfileAudit;onAnalyze:()=>void;analyzing:boolean}){
  if(!audit) return <div className="feature" style={{marginTop:22}}><div className="badge">🔍 Auditoria do perfil</div><h2 style={{marginTop:12}}>Vamos analisar a primeira impressão do seu Instagram.</h2><p className="muted" style={{marginTop:8}}>A IA vai revisar posicionamento, nome, bio, foto, destaques, grade e conversão usando as informações disponíveis.</p><button className="btn primary" style={{marginTop:16}} onClick={onAnalyze} disabled={analyzing}>{analyzing?"Analisando perfil...":"🔍 Fazer auditoria agora"}</button></div>;
@@ -81,7 +153,17 @@ function Audit({audit,onAnalyze,analyzing}:{audit?:ProfileAudit;onAnalyze:()=>vo
 }
 
 function Strategy({ai}:{ai:AIProfile}){return <div style={{marginTop:22}}><div className="feature"><div className="badge">🎯 Diagnóstico</div><h2 style={{marginTop:12}}>O perfil hoje</h2><p style={{marginTop:8}}>{ai.diagnosis}</p><p style={{marginTop:14}}><strong>Posicionamento:</strong> {ai.positioning}</p><p style={{marginTop:10}}><strong>Público:</strong> {ai.audience}</p><p style={{marginTop:10}}><strong>Conversão:</strong> {ai.conversionStrategy}</p></div><div className="feature" style={{marginTop:18}}><h2>🗓️ Plano de 30 dias</h2><div className="grid3" style={{marginTop:14}}>{ai.thirtyDayPlan.map((x,i)=><div className="card" key={i}><small>{x.phase}</small><strong style={{display:"block",marginTop:6}}>{x.focus}</strong><p style={{marginTop:8}}>{x.action}</p><p className="small muted" style={{marginTop:8}}>Sinal esperado: {x.expectedSignal}</p></div>)}</div></div></div>}
-function Week({ai,drafts,onDraftChange}:{ai:AIProfile;drafts:Draft[];onDraftChange:(d:Draft)=>void}){const [selected,setSelected]=useState<{slot:Slot;day:string;draft?:Draft}|null>(null);return <div style={{marginTop:22}}><div className="feature"><div className="badge">📅 Execução</div><h2 style={{marginTop:12}}>Minha semana</h2><p className="muted" style={{marginTop:6}}>{ai.weeklyMission}</p><div className="grid3" style={{marginTop:14}}><Info title="📦 Conteúdos na semana" value={String(ai.weeklyContentCount||28)}/><Info title="📆 Conteúdos por dia" value={ai.dailyContentCount||"4 conteúdos por dia"}/><Info title="🧩 Estrutura diária" value="Story + Foto + Vídeo + Carrossel"/></div><div style={{marginTop:18}}>{ai.weeklyPlan.map((day,i)=><div className="card" key={i} style={{marginTop:12}}><div className="row-between"><div><strong style={{fontSize:19}}>{day.day}</strong><p className="small muted" style={{marginTop:5}}>{day.mission}</p></div><span className="badge">{day.slots.length} conteúdos</span></div><div style={{display:"grid",gap:8,marginTop:12}}>{day.slots.map((slot,j)=>{const draft=drafts.find(d=>d.slotKey===`${i}:${j}`);return <button key={j} onClick={()=>setSelected({slot,day:day.day,draft})} className="contentRow"><div><strong>{fmtIcon[slot.format]||"✨"} {j+1}. {slot.time} · {slot.format}</strong><div style={{marginTop:5}}>{slot.title}</div><div className="small muted" style={{marginTop:4}}>{slot.role} · {slot.objective}</div>{draft&&<div className="small" style={{marginTop:6}}>{draft.status==="PUBLISHED"?"✅ Publicado":draft.status==="APPROVED"?"🟢 Aprovado":draft.status==="SCHEDULED"?"🗓️ Agendado":draft.status==="DRAFT"?"✏️ Rascunho":"💡 Ideia"}</div>}</div><span>→</span></button>})}</div></div>)}</div></div>{selected&&<ContentWorkspace slot={selected.slot} day={selected.day} draft={selected.draft} onDraftChange={onDraftChange} onClose={()=>setSelected(null)}/>}</div>}
+function Week({ai,drafts,onDraftChange}:{ai:AIProfile;drafts:Draft[];onDraftChange:(d:Draft)=>void}){
+ const [selected,setSelected]=useState<{slot:Slot;day:string;draft?:Draft}|null>(null);
+ const [dayIndex,setDayIndex]=useState(0);
+ const day=ai.weeklyPlan?.[dayIndex]||ai.weeklyPlan?.[0];
+ return <div style={{marginTop:8}}>
+   <div className="feature weekTop"><div className="badge">SEMANA</div><h2 style={{marginTop:10}}>Sua semana pronta</h2><p className="muted" style={{marginTop:6}}>Escolha o dia e abra qualquer conteúdo para copiar, ajustar e marcar como postado.</p></div>
+   <div className="dayTabs">{ai.weeklyPlan.map((d,i)=><button key={i} className={i===dayIndex?"active":""} onClick={()=>setDayIndex(i)}>{d.day.slice(0,3)}</button>)}</div>
+   {day&&<div className="feature" style={{marginTop:10}}><div className="row-between"><div><div className="badge">{day.day}</div><p className="muted" style={{marginTop:7}}>{day.mission}</p></div><span className="small muted">{day.slots.length} conteúdo{day.slots.length===1?"":"s"}</span></div><div style={{display:"grid",gap:9,marginTop:14}}>{day.slots.map((slot,j)=>{const draft=drafts.find(d=>d.slotKey===`${dayIndex}:${j}`);return <button key={j} onClick={()=>setSelected({slot,day:day.day,draft})} className="contentRow"><div style={{minWidth:0}}><strong>{fmtIcon[slot.format]||"✨"} {slot.time} · {slot.format}</strong><div style={{marginTop:5}}>{slot.title}</div><div className="small muted" style={{marginTop:4}}>{slot.objective}</div>{draft&&<div className="small" style={{marginTop:6}}>{draft.status==="PUBLISHED"?"✅ Publicado":draft.status==="APPROVED"?"🟢 Aprovado":draft.status==="SCHEDULED"?"🗓️ Agendado":draft.status==="DRAFT"?"✏️ Rascunho":"💡 Ideia"}</div>}</div><span>→</span></button>})}</div></div>}
+   {selected&&<ContentWorkspace slot={selected.slot} day={selected.day} draft={selected.draft} onDraftChange={onDraftChange} onClose={()=>setSelected(null)}/>}
+ </div>
+}
 function MiniSlot({slot}:{slot:Slot}){return <div className="card2"><strong>{fmtIcon[slot.format]||"✨"} {slot.time} · {slot.format}</strong><div style={{marginTop:6}}>{slot.title}</div><div className="small muted" style={{marginTop:5}}>{slot.role}</div></div>}
 function ContentWorkspace({slot:initialSlot,day,draft,onDraftChange,onClose}:{slot:Slot;day:string;draft?:Draft;onDraftChange:(d:Draft)=>void;onClose:()=>void}){const [slot,setSlot]=useState(initialSlot);const [instruction,setInstruction]=useState("");const [busy,setBusy]=useState(false);const [image,setImage]=useState("");const [imageBusy,setImageBusy]=useState(false);const [status,setStatus]=useState<Draft["status"]>(draft?.status||"IDEA");const [statusBusy,setStatusBusy]=useState(false);const [checked,setChecked]=useState<number[]>([]);
  async function changeStatus(next:Draft["status"]){setStatusBusy(true);try{const r=await fetch("/api/content-drafts",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:draft?.id,status:next})});const x=await r.json();if(r.ok&&x.draft){setStatus(x.draft.status);onDraftChange(x.draft)}}finally{setStatusBusy(false)}}
@@ -160,5 +242,17 @@ function Results({profile}:{profile:Profile}){
 function MetricInput({label,value,onChange}:{label:string;value:string;onChange:(v:string)=>void}){return <label className="metricInput"><span>{label}</span><input type="number" min="0" value={value} onChange={e=>onChange(e.target.value)} placeholder="0"/></label>}
 function Metric({title,value,change}:{title:string;value?:number|null;change?:number|null}){return <div className="feature"><small className="muted">{title}</small><p style={{marginTop:8,fontSize:28,fontWeight:800}}>{value==null?"—":value.toLocaleString("pt-BR")}</p><p className="small muted" style={{marginTop:4}}>{change==null?"Sem comparação":(change>=0?"+":"")+change.toLocaleString("pt-BR")+" desde o snapshot anterior"}</p></div>}
 function MetricPercent({title,value}:{title:string;value?:number|null}){return <div className="feature"><small className="muted">{title}</small><p style={{marginTop:8,fontSize:28,fontWeight:800}}>{value==null?"—":value.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+"%"}</p><p className="small muted" style={{marginTop:4}}>Média de interações por post ÷ seguidores</p></div>}
-function ProfileView({profile,router}:{profile:Profile;router:ReturnType<typeof useRouter>}){const fields=[["Instagram",profile.instagramProfileUrl],["Tipo de negócio",profile.businessType],["Nicho",profile.niche],["Oferta",profile.offer],["Objetivo",profile.objective],["Objetivos secundários",Array.isArray(profile.secondaryObjectives)?profile.secondaryObjectives.join(", "):""],["Resultado desejado",profile.desiredOutcome],["Público",profile.audience],["Idade do público",profile.audienceAge],["Localização do público",profile.audienceLocation],["Interesses",profile.audienceInterests],["Dores e desejos",profile.audiencePainPoints],["Posicionamento",profile.desiredPositioning],["Personalidade",profile.brandPersonality],["Estilo",profile.contentStyle],["Formatos",Array.isArray(profile.contentPreferences)?profile.contentPreferences.join(", "):""],["Frequência",profile.postingFrequency],["Monetização",profile.monetization],["Conversão",profile.conversionGoal],["Funil",profile.salesFunnel],["Meta de 90 dias",profile.ninetyDayGoal],["Definição de sucesso",profile.successDefinition],["Diferenciais",profile.differentiators],["Desafios atuais",profile.currentChallenges]];return <div style={{marginTop:22}}><div className="feature"><div className="badge">👤 Meu perfil</div><h2 style={{marginTop:12}}>{profile.niche||"Seu nicho"}</h2><p style={{marginTop:8}}><strong>Oferta:</strong> {profile.offer||"—"}</p><p style={{marginTop:8}}><strong>Objetivo:</strong> {profile.objective||profile.desiredOutcome||"—"}</p><p style={{marginTop:8}}><strong>Posicionamento:</strong> {profile.desiredPositioning||"—"}</p><div className="profileGrid" style={{marginTop:18}}>{fields.map(([label,value])=><div className="card" key={label}><small className="muted">{label}</small><p style={{marginTop:6,whiteSpace:"pre-line"}}>{String(value||"—")}</p></div>)}</div><button className="btn secondary" onClick={()=>router.push("/setup")} style={{marginTop:16}}>Editar meu diagnóstico</button></div></div>}
+function Account({user,profile,router}:{user:Me["user"];profile:Profile;router:ReturnType<typeof useRouter>}){
+ const subscription=user.subscription;
+ const end=subscription?.currentPeriodEnd?new Date(subscription.currentPeriodEnd):null;
+ const trialEnd=subscription?.trialEndsAt?new Date(subscription.trialEndsAt):null;
+ const days=trialEnd?Math.max(0,Math.ceil((trialEnd.getTime()-Date.now())/86400000)):0;
+ return <div style={{marginTop:8}}>
+   <div className="feature accountHero"><div><div className="badge">CONTA</div><h2 style={{marginTop:10}}>{profile.niche||"Seu negócio"}</h2><p className="muted" style={{marginTop:6}}>{profile.offer||"Seu posicionamento e oferta aparecem aqui."}</p></div><button className="btn secondary" onClick={()=>router.push("/setup")}>Editar perfil</button></div>
+   <div className="feature" style={{marginTop:14}}><div className="badge">💳 PLANO ATUAL</div><h2 style={{marginTop:10}}>{subscription?.status==="TRIALING"?"Teste gratuito ativo":"Acesso ativo"}</h2><p className="muted" style={{marginTop:6}}>{subscription?.status==="TRIALING"?`Seu teste vence em ${days} dia(s).`:end?`Seu plano vence em ${Math.max(0,Math.ceil((end.getTime()-Date.now())/86400000))} dia(s), em ${end.toLocaleDateString("pt-BR")}.`:"Escolha um plano para continuar."}</p><button className="btn primary" style={{marginTop:12}} onClick={()=>router.push("/checkout?plan=monthly")}>Renovar por Pix →</button></div>
+   <div className="grid2" style={{marginTop:14}}><div className="card"><small className="muted">SEMANAL</small><strong style={{fontSize:30,display:"block",marginTop:7}}>R$ 14,99</strong><p className="small muted">7 dias de acesso completo.</p><button className="btn secondary full" style={{marginTop:10}} onClick={()=>router.push("/checkout?plan=weekly")}>Escolher semanal</button></div><div className="card"><small className="muted">MENSAL</small><strong style={{fontSize:30,display:"block",marginTop:7}}>R$ 29,99</strong><p className="small muted">30 dias de acesso completo.</p><button className="btn primary full" style={{marginTop:10}} onClick={()=>router.push("/checkout?plan=monthly")}>Escolher mensal</button></div></div>
+   <div className="feature" style={{marginTop:14}}><div className="badge">👤 SEU PERFIL</div><div className="profileGrid" style={{marginTop:14}}>{[["Instagram",profile.instagramProfileUrl],["Tipo de negócio",profile.businessType],["Nicho",profile.niche],["Oferta",profile.offer],["Objetivo",profile.objective],["Público",profile.audience],["Localização",profile.audienceLocation||profile.location],["Posicionamento",profile.desiredPositioning],["WhatsApp",user.phone],["Frequência",profile.postingFrequency]].map(([label,value])=><div className="card" key={label}><small className="muted">{label}</small><p style={{marginTop:6,whiteSpace:"pre-line"}}>{String(value||"—")}</p></div>)}</div><button className="btn secondary" style={{marginTop:14}} onClick={()=>router.push("/setup")}>Editar meus dados →</button></div>
+   <div className="feature" style={{marginTop:14}}><div className="badge">💬 SUPORTE</div><h3 style={{marginTop:10}}>Precisa de ajuda?</h3><p className="muted" style={{marginTop:6}}>Fale com o suporte pelo WhatsApp.</p><a className="btn secondary" style={{display:"inline-block",marginTop:10}} href="https://wa.me/?text=Oi! Preciso de ajuda com o MidiaNet AI." target="_blank" rel="noreferrer">Falar com suporte →</a></div>
+ </div>
+}
 function Info({title,value}:{title:string;value:string}){return <div className="feature"><small className="muted">{title}</small><p style={{marginTop:8,fontSize:17,lineHeight:1.45}}>{value||"—"}</p></div>}
