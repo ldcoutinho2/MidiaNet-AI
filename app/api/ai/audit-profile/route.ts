@@ -29,18 +29,18 @@ const schema = {
     },
     nameAndPositioning: {
       type: "object", additionalProperties: false,
-      properties: { diagnosis:{type:"string"}, recommendation:{type:"string"} },
-      required:["diagnosis","recommendation"]
+      properties: { score:{type:"integer",minimum:0,maximum:100}, diagnosis:{type:"string"}, recommendation:{type:"string"} },
+      required:["score","diagnosis","recommendation"]
     },
     highlights: {
       type: "object", additionalProperties: false,
-      properties: { diagnosis:{type:"string"}, recommendation:{type:"string"} },
-      required:["diagnosis","recommendation"]
+      properties: { score:{type:"integer",minimum:0,maximum:100}, diagnosis:{type:"string"}, recommendation:{type:"string"} },
+      required:["score","diagnosis","recommendation"]
     },
     grid: {
       type: "object", additionalProperties: false,
-      properties: { diagnosis:{type:"string"}, recommendation:{type:"string"} },
-      required:["diagnosis","recommendation"]
+      properties: { score:{type:"integer",minimum:0,maximum:100}, diagnosis:{type:"string"}, recommendation:{type:"string"} },
+      required:["score","diagnosis","recommendation"]
     },
     conversion: {
       type: "object", additionalProperties: false,
