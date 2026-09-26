@@ -218,10 +218,10 @@ export async function POST() {
         "Quando imagens forem anexadas ao input, faça uma análise visual objetiva delas: composição, legibilidade, hierarquia, consistência, uso de texto, enquadramento e qualidade percebida. Não identifique pessoas reais nem invente elementos que não estejam visíveis.",
         "Use as imagens somente para avaliar os conteúdos realmente enviados. Não trate os últimos 6 conteúdos como se fossem necessariamente toda a grade do perfil.",
         "A frequência informada pelo cliente é uma preferência de referência; não trate automaticamente uma meta de 5 conteúdos por semana como limite se a capacidade e o objetivo indicarem uma frequência maior. Só trate como limite quando o cliente disser explicitamente que não consegue produzir mais.",
-        "Defina explicitamente quantos conteúdos principais serão publicados por semana e quantos por dia. Para perfis cujo objetivo seja crescimento, alcance, viralização ou aquisição de clientes, a programação principal desta versão deve usar 3 publicações por dia: Foto/Post às 12:30, Reel/Vídeo às 19:00 e Carrossel às 21:00. Além delas, cada dia deve ter 1 Story às 09:00 como conteúdo complementar. Portanto, o weeklyPlan desta versão deve ter exatamente 4 slots por dia, totalizando 28 conteúdos na semana.",
-        "Stories são o primeiro conteúdo do dia e devem acontecer às 09:00. Depois, obrigatoriamente, vêm Foto/Post às 12:30, Reel/Vídeo às 19:00 e Carrossel às 21:00. Não troque essa ordem nem reduza a quantidade nesta versão.",
-        "A programação deve deixar impossível confundir quantos conteúdos existem em cada dia. O weeklyPlan precisa conter todos os slots daquele dia, e cada slot deve ser um conteúdo diferente e completo.",
-        "A semana deve ter 7 dias e exatamente 4 slots em cada dia. Use estes formatos nesta ordem: Story, Foto, Reel, Carrossel. Cada slot precisa ser completo e pronto para execução.",
+        "Escolha o ritmo de produção de acordo com a capacidade informada pelo cliente. Esta versão trabalha com 1, 2 ou 3 conteúdos por dia. Se o cliente não definir um ritmo claro, use 2 por dia como padrão: 1 Story às 09:00 + 1 publicação principal às 19:00. Para 1 conteúdo por dia, priorize a publicação principal às 19:00. Para 3 conteúdos por dia, use Story às 09:00 + publicação às 12:30 + Reel/Carrossel às 19:00.",
+        "Nunca force 4 conteúdos por dia. O objetivo é criar uma rotina executável para iniciantes. O weeklyPlan deve ter 7 dias e entre 1 e 3 slots em cada dia. Cada slot precisa ser completo e pronto para execução.",
+        "Distribua os formatos de forma coerente com o ritmo escolhido. Stories são complementares quando houver 2 ou 3 conteúdos; não trate Story como obrigatório quando o ritmo for 1 conteúdo por dia.",
+        "A programação deve deixar impossível confundir quantos conteúdos existem em cada dia. Cada slot deve ser um conteúdo diferente e completo.",
         "Distribua funções claras entre os conteúdos: descoberta/alcance, autoridade, relacionamento, prova quando houver dados reais, oferta/conversão e retenção. Não invente provas.",
         "Para cada conteúdo entregue horário sugerido, formato, função, objetivo, título, tema, gancho, roteiro completo, legenda pronta, direção visual, CTA e passos de execução.",
         "Para Reels, escreva cena a cena quando possível. Se o cliente não aparecer, use tela, B-roll, demonstração, texto ou voz em off.",
@@ -321,12 +321,14 @@ export async function POST() {
     }
 
     const aiProfile = JSON.parse(response.output_text);
-    const fixedSchedule = [
-      { format: "Story", time: "09:00" },
-      { format: "Foto", time: "12:30" },
-      { format: "Reel", time: "19:00" },
-      { format: "Carrossel", time: "21:00" }
-    ];
+    const requested = String(profile.postingFrequency || "").toLowerCase();
+    const requestedCount = requested.includes("3") ? 3 : requested.includes("1") ? 1 : 2;
+    const scheduleByCount = {
+      1: [{ format: "Reel", time: "19:00" }],
+      2: [{ format: "Story", time: "09:00" }, { format: "Reel", time: "19:00" }],
+      3: [{ format: "Story", time: "09:00" }, { format: "Foto", time: "12:30" }, { format: "Reel", time: "19:00" }]
+    } as const;
+    const fixedSchedule = scheduleByCount[requestedCount];
     if (Array.isArray(aiProfile.weeklyPlan)) {
       aiProfile.weeklyPlan = aiProfile.weeklyPlan.slice(0, 7).map((day: any) => {
         const remaining = Array.isArray(day.slots) ? [...day.slots] : [];
@@ -348,11 +350,7 @@ export async function POST() {
           0
         )
       : 0;
-    aiProfile.dailyContentCount = Array.isArray(aiProfile.weeklyPlan)
-      ? aiProfile.weeklyPlan
-          .map((day: { slots?: unknown[] }) => Array.isArray(day.slots) ? day.slots.length : 0)
-          .join(" / ") + " conteúdos por dia"
-      : "—";
+    aiProfile.dailyContentCount = `${requestedCount} conteúdo${requestedCount===1?"":"s"} por dia`;
     const updated = await db.strategicProfile.update({
       where: { userId: user.id },
       data: { aiProfile, aiAnalyzedAt: new Date() }
