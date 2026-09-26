@@ -11,6 +11,9 @@ export async function POST(request: Request) {
     const phone = String(body.phone ?? "").trim();
     const profileDescription = String(body.profileDescription ?? "").trim();
     const desiredOutcome = String(body.desiredOutcome ?? "").trim();
+    const instagramProfileUrl = String(body.instagramProfileUrl ?? "").trim();
+    const businessType = String(body.businessType ?? "").trim();
+    const objective = String(body.objective ?? "").trim();
 
     if (!email || !email.includes("@")) {
       return NextResponse.json({ error: "Informe um e-mail válido." }, { status: 400 });
@@ -37,7 +40,7 @@ export async function POST(request: Request) {
         phone,
         passwordHash: hashPassword(password),
         strategicProfile: {
-          create: { profileDescription, desiredOutcome },
+          create: { profileDescription, desiredOutcome, instagramProfileUrl: instagramProfileUrl || null, businessType: businessType || null, objective: objective || null },
         },
         subscription: {
           create: {
