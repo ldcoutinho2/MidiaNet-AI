@@ -244,7 +244,7 @@ function Audit({audit,onAnalyze,analyzing}:{audit?:ProfileAudit;onAnalyze:()=>vo
    else{const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="diagnostico-midianet-ai.png";a.click();URL.revokeObjectURL(url);}
  }
 
- if(!audit) return <div className="feature" style={{marginTop:22}}><div className="badge">🔍 Auditoria do perfil</div><h2 style={{marginTop:12}}>Vamos analisar seu Instagram.</h2><p className="muted" style={{marginTop:8}}>A análise usa os dados sincronizados do perfil e os conteúdos públicos disponíveis.</p><button className="btn primary" style={{marginTop:16}} onClick={onAnalyze} disabled={analyzing}>{analyzing?"Analisando perfil...":"🔍 Fazer auditoria agora"}</button></div>;
+ if(!safeAudit) return <div className="feature" style={{marginTop:22}}><div className="badge">🔍 Auditoria do perfil</div><h2 style={{marginTop:12}}>Vamos analisar seu Instagram.</h2><p className="muted" style={{marginTop:8}}>A análise usa os dados sincronizados do perfil e os conteúdos públicos disponíveis.</p><button className="btn primary" style={{marginTop:16}} onClick={onAnalyze} disabled={analyzing}>{analyzing?"Analisando perfil...":"🔍 Fazer auditoria agora"}</button></div>;
  const items=[
    ["Nome e @",safeAudit.nameAndPositioning],
    ["Foto de perfil",safeAudit.profilePhoto],
