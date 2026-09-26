@@ -5,6 +5,11 @@ export const PLAN_DAYS: Record<string, number> = {
   monthly: 30,
 };
 
+export const PLAN_AMOUNTS_CENTS: Record<string, number> = {
+  weekly: 1499,
+  monthly: 2999,
+};
+
 export type MercadoPagoPayment = {
   id?: string | number;
   status?: string;
@@ -60,6 +65,12 @@ export async function confirmMercadoPagoPayment(
   }
 
   const status = String(payment.status || "").toLowerCase();
+  const expectedAmount = PLAN_AMOUNTS_CENTS[reference.plan];
+  const actualAmount = Math.round(Number(payment.transaction_amount || 0) * 100);
+  if (expectedAmount && actualAmount !== expectedAmount) {
+    console.error("mercadopago_amount_mismatch", { paymentId, plan: reference.plan, expectedAmount, actualAmount });
+    return { ok: false as const, reason: "amount_mismatch" as const };
+  }
 
   if (status !== "approved") {
     const existing = await db.payment.findUnique({ where: { providerPaymentId: paymentId } });
