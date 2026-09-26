@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     const history = Array.isArray(body.history) ? body.history.slice(-8) : [];
     const format = String(body.format || idea.format || "Reels");
 
-    const entitlement = await consumeContentGeneration(user.id);
+    const entitlement = await consumeContentGeneration(user.id, { dryRun: true });
     if (!entitlement.ok) return NextResponse.json({ error: entitlement.error }, { status: 402 });
 
     const profile = user.strategicProfile;
@@ -129,6 +129,8 @@ export async function POST(request: Request) {
     }
 
     const result = JSON.parse(response.output_text);
+    const finalConsumption = await consumeContentGeneration(user.id);
+    if (!finalConsumption.ok) return NextResponse.json({ error: finalConsumption.error }, { status: 402 });
 
     const current = (profile.aiProfile && typeof profile.aiProfile === "object")
       ? profile.aiProfile as Record<string, any>
