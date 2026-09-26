@@ -340,9 +340,6 @@ export async function POST() {
         return { ...day, slots };
       });
     }
-    if (entitlement.trialActive) {
-      aiProfile.weeklyPlan = Array.isArray(aiProfile.weeklyPlan) ? aiProfile.weeklyPlan.slice(0, 2) : [];
-    }
     aiProfile.weeklyContentCount = Array.isArray(aiProfile.weeklyPlan)
       ? aiProfile.weeklyPlan.reduce(
           (total: number, day: { slots?: unknown[] }) =>
