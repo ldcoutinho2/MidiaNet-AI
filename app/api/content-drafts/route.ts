@@ -56,14 +56,16 @@ export async function PATCH(req: Request) {
   if (!existing) return NextResponse.json({ error: "Conteúdo não encontrado." }, { status: 404 });
 
   const now = new Date();
-  const updated = await db.contentDraft.update({
-    where: { id },
-    data: {
-      status: status as any,
-      approvedAt: status === "APPROVED" ? (existing.approvedAt || now) : existing.approvedAt,
-      publishedAt: status === "PUBLISHED" ? (existing.publishedAt || now) : existing.publishedAt,
-    },
-  });
+  const patchData:any = {
+    status: status as any,
+    approvedAt: status === "APPROVED" ? (existing.approvedAt || now) : existing.approvedAt,
+    publishedAt: status === "PUBLISHED" ? (existing.publishedAt || now) : existing.publishedAt,
+  };
+  for (const key of ["title","format","objective","hook","script","caption","visualDirection","cta","slotKey","dayLabel","timeLabel"]) {
+    if (typeof body[key] === "string") patchData[key] = body[key];
+  }
+  if (Array.isArray(body.conversationHistory)) patchData.conversationHistory = body.conversationHistory;
+  const updated = await db.contentDraft.update({ where: { id: existing.id }, data: patchData });
 
   return NextResponse.json({ ok: true, draft: updated });
 }
