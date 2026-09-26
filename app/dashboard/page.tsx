@@ -82,7 +82,7 @@ export default function Dashboard(){
  const ai=isCurrentStrategy(raw)?raw:null;
  let panel:ReactNode;
  if(!ai) panel=<SetupStrategy analyzing={analyzing} analyze={analyze} hasOldStrategy={Boolean(raw)}/>;
- else if(tab==="home") panel=<Home ai={ai} name={data.user.name||"criador"} drafts={drafts} onWeek={()=>setTab("week")} onOpenToday={(day,slot)=>{setWeekOpen({day,slot});setTab("week")}}/>;
+ else if(tab==="home") panel=<Home ai={ai} profile={p} name={data.user.name||"criador"} drafts={drafts} onWeek={()=>setTab("week")} onOpenToday={(day,slot)=>{setWeekOpen({day,slot});setTab("week")}}/>;
  else if(tab==="week") panel=<Week ai={ai} trial={data.user.subscription?.status==="TRIALING"} drafts={drafts} onDraftChange={(d)=>setDrafts(v=>v.some(x=>x.id===d.id)?v.map(x=>x.id===d.id?d:x):[...v,d])} openSlot={weekOpen} onConsumeOpen={()=>setWeekOpen(null)}/>;
  else if(tab==="diagnostic") panel=<Diagnostic ai={ai} onAnalyze={auditProfile} analyzing={analyzing}/>;
  else if(tab==="results") panel=<Results profile={p} onNewIdea={()=>setTab("create")}/>;
@@ -124,7 +124,7 @@ function isCurrentStrategy(v:any):v is AIProfile{
  return Boolean(v&&typeof v==="object"&&typeof v.objective==="string"&&Array.isArray(v.weeklyPlan)&&v.weeklyPlan.length===7&&v.weeklyPlan.every((d:any)=>d&&Array.isArray(d.slots)&&d.slots.length===4&&String(d.slots[0]?.format||"").toLowerCase()==="story"));
 }
 function SetupStrategy({analyzing,analyze,hasOldStrategy}:{analyzing:boolean;analyze:()=>void;hasOldStrategy:boolean}){return <div className="feature" style={{marginTop:24}}><div className="badge">{hasOldStrategy?"Atualização":"1º passo"}</div><h2 style={{marginTop:12}}>{hasOldStrategy?"Sua estratégia ganhou a nova programação.":"Vamos transformar seu perfil em um plano."}</h2><p className="muted" style={{marginTop:8,maxWidth:760}}>A IA vai montar diagnóstico, estratégia, semana completa e conteúdos prontos para você executar — 1 Story obrigatório + 3 publicações principais por dia. Os 3 posts são escolhidos pela análise do seu perfil.</p><button className="btn primary" onClick={analyze} disabled={analyzing} style={{marginTop:18}}>{analyzing?"Analisando seu perfil...":hasOldStrategy?"Atualizar minha estratégia →":"Montar minha estratégia →"}</button></div>}
-function Home({ai,name,drafts,onWeek,onOpenToday}:{ai:AIProfile;name:string;drafts:Draft[];onWeek:()=>void;onOpenToday:(dayIndex:number,slotIndex:number)=>void}){
+function Home({ai,profile,name,drafts,onWeek,onOpenToday}:{ai:AIProfile;profile:Profile;name:string;drafts:Draft[];onWeek:()=>void;onOpenToday:(dayIndex:number,slotIndex:number)=>void}){
  const dayIndex=Math.min(Math.max((new Date().getDay()+6)%7,0),(ai.weeklyPlan?.length||1)-1);
  const today=ai.weeklyPlan?.[dayIndex]||ai.weeklyPlan?.[0];
  const actions=today?.slots||[];
@@ -138,6 +138,7 @@ function Home({ai,name,drafts,onWeek,onOpenToday}:{ai:AIProfile;name:string;draf
      <div><div className="badge">HOJE</div><h1>Olá, {name} 👋</h1><p className="muted">Você não precisa decidir o que postar. Seu próximo passo está aqui.</p></div>
      <div className="scoreMini"><small>Nota do perfil</small><strong>{score??"—"}<span>/100</span></strong><div className="scoreTrack"><i style={{width:`${Math.max(0,Math.min(score||0,100))}%`}}/></div></div>
    </div>
+   <ClientOverview ai={ai} profile={profile} drafts={drafts}/>
    <div className="feature todayMainCard">
      <div className="row-between"><div><div className="badge">🚀 O QUE FAZER HOJE</div><h2 style={{marginTop:10}}>{today?.day||"Hoje"}</h2></div><span className="small muted">{actions.length} conteúdo{actions.length===1?"":"s"} hoje</span></div>
      <p className="muted" style={{marginTop:6}}>{today?.mission||"Siga o conteúdo recomendado para hoje."}</p>
@@ -148,6 +149,46 @@ function Home({ai,name,drafts,onWeek,onOpenToday}:{ai:AIProfile;name:string;draf
    <div className="feature quickFix"><div className="badge">🛠️ Corrija em 5 minutos</div><h2 style={{marginTop:10}}>Comece por estas 3 correções</h2><div className="quickFixList">{(ai.profileAudit?.priorities||["Revise sua bio","Deixe seu CTA mais claro","Escolha um tema principal para a semana"]).slice(0,3).map((x,i)=><div className="card" key={i}><b>{i+1}.</b> {x}</div>)}</div></div>
  </div>
 }
+function ClientOverview({ai,profile,drafts}:{ai:AIProfile;profile:Profile;drafts:Draft[]}){
+ const [metrics,setMetrics]=useState<any>(null); const [business,setBusiness]=useState<any>(null);
+ useEffect(()=>{Promise.all([fetch("/api/metrics/summary").then(r=>r.ok?r.json():null),fetch("/api/metrics/business").then(r=>r.ok?r.json():null)]).then(([a,b])=>{setMetrics(a);setBusiness(b)}).catch(()=>{})},[]);
+ const latest=metrics?.latest, previous=metrics?.previous;
+ const delta=(key:string)=>latest?.[key]!=null&&previous?.[key]!=null?Number(latest[key])-Number(previous[key]):null;
+ const total=(ai.weeklyPlan||[]).reduce((n,d)=>n+(d.slots?.length||0),0);
+ const published=drafts.filter(d=>d.status==="PUBLISHED"&&d.slotKey).length;
+ const consistency=total?Math.round((published/total)*100):0;
+ const currentBusiness=business?.snapshots?.[0], previousBusiness=business?.snapshots?.[1];
+ const salesDelta=currentBusiness&&previousBusiness?Number(currentBusiness.salesCount||0)-Number(previousBusiness.salesCount||0):null;
+ const revenueDelta=currentBusiness&&previousBusiness?Number(currentBusiness.revenue||0)-Number(previousBusiness.revenue||0):null;
+ const auditScore=ai.profileAudit?.overallScore;
+ const goal=profile.ninetyDayGoal||profile.desiredOutcome||ai.objective||"Construir um perfil mais claro e previsível";
+ const stage=ai.currentStage||"Diagnóstico inicial";
+ const bottleneck=ai.profileAudit?.priorities?.[0]||ai.mainProblem||"Defina o principal gargalo do perfil";
+ return <div className="clientOverview">
+   <div className="overviewHeader"><div><div className="badge">🧭 MAPA DO SEU PERFIL</div><h2 style={{marginTop:9}}>Onde você está e para onde estamos levando o perfil</h2><p className="muted" style={{marginTop:6}}>O MidiaNet não serve só para entregar posts. Ele acompanha o caminho entre atenção, relacionamento e resultado.</p></div></div>
+   <div className="overviewGoal"><small>🎯 OBJETIVO DESTE CICLO</small><strong>{goal}</strong><span>Estágio atual: {stage}</span></div>
+   <div className="overviewPath">
+    <div className="overviewStep active"><b>01</b><strong>Diagnóstico</strong><span>{auditScore!=null?"Perfil "+auditScore+"/100":"Ainda não auditado"}</span></div>
+    <div className="overviewConnector">→</div>
+    <div className="overviewStep"><b>02</b><strong>Estratégia</strong><span>{ai.contentPillars?.length||0} pilares definidos</span></div>
+    <div className="overviewConnector">→</div>
+    <div className="overviewStep"><b>03</b><strong>Execução</strong><span>{published}/{total} conteúdos publicados</span></div>
+    <div className="overviewConnector">→</div>
+    <div className="overviewStep"><b>04</b><strong>Resultado</strong><span>{currentBusiness?(currentBusiness.salesCount||0)+" vendas registradas":"Ainda sem registro"}</span></div>
+   </div>
+   <div className="overviewGrid">
+    <div className="overviewMetric"><small>👥 SEGUIDORES</small><strong>{metrics?.account?.followersCount!=null?Number(metrics.account.followersCount).toLocaleString("pt-BR"):"—"}</strong><span>{delta("followers")==null?"Sem comparação":(delta("followers")>=0?"+":"")+delta("followers").toLocaleString("pt-BR")+" desde o último registro"}</span></div>
+    <div className="overviewMetric"><small>💬 INTERAÇÕES DA AMOSTRA</small><strong>{latest?.likes!=null||latest?.comments!=null?(Number(latest?.likes||0)+Number(latest?.comments||0)).toLocaleString("pt-BR"):"—"}</strong><span>curtidas + comentários dos conteúdos sincronizados</span></div>
+    <div className="overviewMetric"><small>📅 CONSISTÊNCIA</small><strong>{consistency}%</strong><span>{published} de {total} conteúdos publicados</span></div>
+    <div className="overviewMetric"><small>💰 CONVERSÃO</small><strong>{currentBusiness?"R$ "+Number(currentBusiness.revenue||0).toFixed(2):"—"}</strong><span>{currentBusiness?(currentBusiness.salesCount||0)+" vendas · "+(currentBusiness.instagramLeads||0)+" leads IG":"Registre seus resultados para medir"}</span></div>
+   </div>
+   <div className="overviewAction">
+    <div><small>🔎 PRINCIPAL GARGALO AGORA</small><strong>{bottleneck}</strong><p>{ai.nextAction||"Execute a próxima ação recomendada e registre o resultado."}</p></div>
+    <div className="overviewSignal"><small>PRÓXIMO SINAL A OBSERVAR</small><strong>{ai.weeklyMission||"Concluir o primeiro ciclo de conteúdo e observar as respostas."}</strong><span>{salesDelta==null?"Ainda sem comparação de vendas":"Vendas: "+(salesDelta>=0?"+":"")+salesDelta+" · Receita: "+(revenueDelta==null?"—":"R$ "+revenueDelta.toFixed(2))}</span></div>
+   </div>
+ </div>
+}
+
 function Week({ai,trial,drafts,onDraftChange,openSlot,onConsumeOpen}:{ai:AIProfile;trial:boolean;drafts:Draft[];onDraftChange:(d:Draft)=>void;openSlot?:{day:number;slot:number}|null;onConsumeOpen:()=>void}){
  const [selected,setSelected]=useState<{slot:Slot;day:string;draft?:Draft}|null>(null);
  const [dayIndex,setDayIndex]=useState(openSlot?.day||0);
