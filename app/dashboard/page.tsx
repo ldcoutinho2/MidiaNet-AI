@@ -235,4 +235,3 @@ function Create(){
  {options.length>0&&<div style={{marginTop:18}}><h2>Escolha um formato</h2><div style={{display:"grid",gap:12,marginTop:12}}>{options.map((o,i)=><div className="card" key={i}><div className="row-between"><span className="badge">{i+1} · {o.format}</span><span className="small muted">{o.angle}</span></div><h3 style={{marginTop:10}}>{o.title}</h3><p style={{marginTop:8}}><strong>🪝 {o.hook}</strong></p><div className="small muted" style={{marginTop:8}}><strong>Roteiro:</strong> {o.script}</div><div className="small muted" style={{marginTop:8}}><strong>Legenda:</strong> {o.caption}</div><div className="small" style={{marginTop:8}}>CTA: {o.cta}</div><button className="btn primary" style={{marginTop:12}} onClick={()=>addToWeek(o,i)} disabled={saving===i}>{saving===i?"Salvando...":"＋ Adicionar à minha semana"}</button></div>)}</div></div>}
  </div>
 }
-}
