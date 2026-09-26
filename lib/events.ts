@@ -9,9 +9,16 @@ export type ProductEvent =
   | "analysis_completed"
   | "strategy_created"
   | "checkout_started"
-  | "payment_approved"
   | "subscription_started"
-  | "subscription_cancelled";
+  | "subscription_cancelled"
+  | "trial_started"
+  | "diagnostic_started"
+  | "diagnostic_completed"
+  | "checkout_viewed"
+  | "pix_created"
+  | "payment_approved"
+  | "trial_expired"
+  | "upgrade_clicked";
 
 export interface AnalyticsEvent {
   name: ProductEvent;
