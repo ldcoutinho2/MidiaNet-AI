@@ -15,6 +15,35 @@ export async function GET() {
   return NextResponse.json({ ok: true, drafts });
 }
 
+export async function POST(req: Request) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+  const body = await req.json().catch(() => ({}));
+  const title = typeof body.title === "string" ? body.title.trim() : "";
+  if (!title) return NextResponse.json({ error: "Título obrigatório." }, { status: 400 });
+  const draft = await db.contentDraft.create({
+    data: {
+      userId: user.id,
+      status: "DRAFT",
+      slotKey: null,
+      dayLabel: "Ideias adicionadas",
+      timeLabel: null,
+      format: String(body.format || "Reel"),
+      role: String(body.role || "Nova ideia"),
+      objective: String(body.objective || ""),
+      title,
+      topic: String(body.topic || ""),
+      hook: String(body.hook || ""),
+      script: String(body.script || ""),
+      caption: String(body.caption || ""),
+      visualDirection: String(body.visualDirection || ""),
+      cta: String(body.cta || ""),
+      conversationHistory: Array.isArray(body.executionSteps) ? body.executionSteps : []
+    }
+  });
+  return NextResponse.json({ ok: true, draft });
+}
+
 export async function PATCH(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
