@@ -423,7 +423,7 @@ function Create({ai,drafts,onDraftChange}:{ai:AIProfile;drafts:Draft[];onDraftCh
    try{
      const slotKey=`${dayIndex}:${slotIndex}`;
      const existing=drafts.find(d=>d.slotKey===slotKey);
-     const payload={status:"DRAFT",slotKey,dayLabel:selectedDay.day,timeLabel:selectedSlot.time,format:o.format,role:"Nova ideia",objective:o.objective,title:o.title,topic:idea,hook:o.hook,script:o.script,caption:o.caption,visualDirection:o.direction,cta:o.cta,conversationHistory:Array.isArray(o.executionSteps)?o.executionSteps:[]};
+     const payload={status:"DRAFT",slotKey,dayLabel:selectedDay.day,timeLabel:selectedSlot.time,format:o.format,role:"Nova ideia",objective:o.objective,title:o.title,topic:idea,hook:o.hook,script:o.script,caption:o.caption,visualDirection:o.direction,cta:o.cta,conversationHistory:[{whyItFits:o.whyItFits||"",audienceProblem:o.audienceProblem||"",funnelStage:o.funnelStage||"",desiredAction:o.desiredAction||"",successSignal:o.successSignal||"",trendAngle:o.trendAngle||"",originalityAngle:o.originalityAngle||"",executionSteps:Array.isArray(o.executionSteps)?o.executionSteps:[]}]};
      const r=await fetch("/api/content-drafts",{method:existing?"PATCH":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(existing?{id:existing.id,...payload}:payload)});
      const x=await r.json();
      if(!r.ok){setError(x.error||"Não foi possível adicionar à semana.");return}
