@@ -74,7 +74,7 @@ export default function Dashboard(){
  let panel:ReactNode;
  if(!ai) panel=<SetupStrategy analyzing={analyzing} analyze={analyze} hasOldStrategy={Boolean(raw)}/>;
  else if(tab==="home") panel=<Home ai={ai} onWeek={()=>setTab("week")}/>;
- else if(tab==="week") panel=<Week ai={ai} drafts={drafts} onDraftChange={(d)=>setDrafts(v=>v.some(x=>x.id===d.id)?v.map(x=>x.id===d.id?d:x):[...v,d])}/>;
+ else if(tab==="week") panel=<Week ai={ai} trial={data.user.subscription?.status==="TRIALING"} drafts={drafts} onDraftChange={(d)=>setDrafts(v=>v.some(x=>x.id===d.id)?v.map(x=>x.id===d.id?d:x):[...v,d])}/>;
  else if(tab==="diagnostic") panel=<Diagnostic ai={ai} onAnalyze={auditProfile} analyzing={analyzing}/>;
  else if(tab==="results") panel=<Results profile={p}/>;
  else if(tab==="create") panel=<Create/>;
@@ -136,13 +136,13 @@ function Home({ai,name,drafts,onWeek}:{ai:AIProfile;name:string;drafts:Draft[];o
    <div className="feature quickFix"><div className="badge">🛠️ Corrija em 5 minutos</div><h2 style={{marginTop:10}}>Comece por estas 3 correções</h2><div className="quickFixList">{(ai.profileAudit?.priorities||["Revise sua bio","Deixe seu CTA mais claro","Escolha um tema principal para a semana"]).slice(0,3).map((x,i)=><div className="card" key={i}><b>{i+1}.</b> {x}</div>)}</div></div>
  </div>
 }
-function Week({ai,drafts,onDraftChange}:{ai:AIProfile;drafts:Draft[];onDraftChange:(d:Draft)=>void}){
+function Week({ai,trial,drafts,onDraftChange}:{ai:AIProfile;trial:boolean;drafts:Draft[];onDraftChange:(d:Draft)=>void}){
  const [selected,setSelected]=useState<{slot:Slot;day:string;draft?:Draft}|null>(null);
  const [dayIndex,setDayIndex]=useState(0);
  const day=ai.weeklyPlan?.[dayIndex]||ai.weeklyPlan?.[0];
  return <div style={{marginTop:8}}>
-   <div className="feature weekTop"><div className="badge">SEMANA</div><h2 style={{marginTop:10}}>Sua semana pronta</h2><p className="muted" style={{marginTop:6}}>Escolha o dia e abra qualquer conteúdo para copiar, ajustar e marcar como postado.</p><div className="small muted" style={{marginTop:10}}>Ritmo atual: {ai.dailyContentCount||"2 conteúdos por dia"}</div></div>
-   <div className="dayTabs">{ai.weeklyPlan.map((d,i)=><button key={i} className={i===dayIndex?"active":""} onClick={()=>setDayIndex(i)}>{d.day.slice(0,3)}</button>)}</div>
+   <div className="feature weekTop"><div className="badge">SEMANA</div><h2 style={{marginTop:10}}>Sua semana pronta</h2><p className="muted" style={{marginTop:6}}>Escolha o dia e abra qualquer conteúdo para copiar, ajustar e marcar como postado.</p><div className="small muted" style={{marginTop:10}}>Ritmo atual: {ai.dailyContentCount||"2 conteúdos por dia"}</div>{trial&&<div className="trialLockBanner">🎁 No teste grátis, o primeiro dia está liberado. Os outros dias ficam bloqueados até liberar a semana.</div>}</div>
+   <div className="dayTabs">{ai.weeklyPlan.map((d,i)=>{const locked=trial&&i>0;return <button key={i} className={i===dayIndex?"active":""} disabled={locked} onClick={()=>!locked&&setDayIndex(i)}>{locked?"🔒":" "}{d.day.slice(0,3)}</button>})}</div>
    {day&&<div className="feature" style={{marginTop:10}}><div className="row-between"><div><div className="badge">{day.day}</div><p className="muted" style={{marginTop:7}}>{day.mission}</p></div><span className="small muted">{day.slots.length} conteúdo{day.slots.length===1?"":"s"}</span></div><div style={{display:"grid",gap:9,marginTop:14}}>{day.slots.map((slot,j)=>{const draft=drafts.find(d=>d.slotKey===`${dayIndex}:${j}`);return <button key={j} onClick={()=>setSelected({slot,day:day.day,draft})} className="contentRow"><div style={{minWidth:0}}><strong>{fmtIcon[slot.format]||"✨"} {slot.time} · {slot.format}</strong><div style={{marginTop:5}}>{slot.title}</div><div className="small muted" style={{marginTop:4}}>{slot.objective}</div>{draft&&<div className="small" style={{marginTop:6}}>{draft.status==="PUBLISHED"?"✅ Publicado":draft.status==="APPROVED"?"🟢 Aprovado":draft.status==="SCHEDULED"?"🗓️ Agendado":draft.status==="DRAFT"?"✏️ Rascunho":"💡 Ideia"}</div>}</div><span>→</span></button>})}</div></div>}
    {selected&&<ContentWorkspace slot={selected.slot} day={selected.day} draft={selected.draft} onDraftChange={onDraftChange} onClose={()=>setSelected(null)}/>}
  </div>
