@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { trackEvent } from "@/lib/events";
 
 const PLANS = {
   weekly: { label: "Semanal", price: 14.99, days: 7 },
@@ -37,6 +38,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get("plan") as keyof typeof PLANS | null;
     if (requested && PLANS[requested]) setPlanKey(requested);
+    trackEvent({ name: "checkout_viewed", occurredAt: new Date().toISOString(), metadata: { plan: requested && PLANS[requested] ? requested : "weekly" } });
     fetch("/api/auth/me")
       .then(async (r) => {
         if (!r.ok) {
@@ -70,6 +72,7 @@ export default function CheckoutPage() {
     if (cleanWhatsapp.length < 10 || cleanWhatsapp.length > 13) return setError("Informe um WhatsApp válido.");
 
     setLoading(true);
+    trackEvent({ name: "checkout_started", occurredAt: new Date().toISOString(), metadata: { plan: planKey, amount: plan.price } });
     try {
       const response = await fetch("/api/payments/mercadopago/pix", {
         method: "POST",
@@ -82,6 +85,7 @@ export default function CheckoutPage() {
         return;
       }
       setPayment(data);
+      trackEvent({ name: "pix_created", occurredAt: new Date().toISOString(), metadata: { plan: planKey, amount: plan.price } });
     } catch {
       setError("Não foi possível conectar ao pagamento.");
     } finally {
@@ -105,6 +109,8 @@ export default function CheckoutPage() {
         const data = await response.json().catch(() => ({}));
         if (active && data.status === "PAID") {
           setConfirmed(true);
+          trackEvent({ name: "payment_approved", occurredAt: new Date().toISOString(), metadata: { plan: payment.plan || planKey, paymentId: String(payment.paymentId || "") } });
+          window.clearInterval(timer);
         }
       } catch {}
     };
