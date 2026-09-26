@@ -42,7 +42,7 @@ export async function POST(request: Request) {
   const idea = String(body.idea || "").trim();
   if (!idea) return NextResponse.json({ error: "Digite uma ideia primeiro." }, { status: 400 });
 
-  const entitlement = await consumeContentGeneration(user.id);
+  const entitlement = await consumeContentGeneration(user.id, { dryRun: true });
   if (!entitlement.ok) return NextResponse.json({ error: entitlement.error }, { status: 402 });
 
   const profile = user.strategicProfile;
