@@ -14,6 +14,13 @@ export async function POST(request: Request) {
     const instagramProfileUrl = String(body.instagramProfileUrl ?? "").trim();
     const businessType = String(body.businessType ?? "").trim();
     const objective = String(body.objective ?? "").trim();
+    const attribution = {
+      utm_source: String(body.utmSource ?? "").trim(),
+      utm_medium: String(body.utmMedium ?? "").trim(),
+      utm_campaign: String(body.utmCampaign ?? "").trim(),
+      utm_content: String(body.utmContent ?? "").trim(),
+      utm_term: String(body.utmTerm ?? "").trim(),
+    };
 
     if (!email || !email.includes("@")) {
       return NextResponse.json({ error: "Informe um e-mail válido." }, { status: 400 });
@@ -61,7 +68,7 @@ export async function POST(request: Request) {
         name: "signup_completed",
         occurredAt: new Date(),
         userId: user.id,
-        metadata: { source: "signup" },
+        metadata: { source: "signup", ...Object.fromEntries(Object.entries(attribution).filter(([, value]) => value)) },
       },
     });
     await db.event.create({
@@ -69,7 +76,7 @@ export async function POST(request: Request) {
         name: "trial_started",
         occurredAt: new Date(),
         userId: user.id,
-        metadata: { plan: "TRIAL_2_DAYS", days: 2 },
+        metadata: { plan: "TRIAL_2_DAYS", days: 2, ...Object.fromEntries(Object.entries(attribution).filter(([, value]) => value)) },
       },
     });
 
