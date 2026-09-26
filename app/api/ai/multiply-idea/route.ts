@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { openai } from "@/lib/openai";
+import { consumeContentGeneration } from "@/lib/entitlements";
 
 const schema = {
   type: "object",
@@ -40,6 +41,9 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const idea = String(body.idea || "").trim();
   if (!idea) return NextResponse.json({ error: "Digite uma ideia primeiro." }, { status: 400 });
+
+  const entitlement = await consumeContentGeneration(user.id);
+  if (!entitlement.ok) return NextResponse.json({ error: entitlement.error }, { status: 402 });
 
   const profile = user.strategicProfile;
   if (!profile) return NextResponse.json({ error: "Complete seu perfil primeiro." }, { status: 400 });
