@@ -15,7 +15,7 @@ export async function GET() {
       name: user.name,
       email: user.email,
       phone: user.phone,
-      strategicProfile: user.strategicProfile,
+      strategicProfile: user.strategicProfile ? { ...user.strategicProfile, profileScreenshotData: user.strategicProfile.profileScreenshotData ? "__stored__" : "", insightsScreenshotData: user.strategicProfile.insightsScreenshotData ? "__stored__" : "" } : null,
       subscription: entitlement.subscription,
       socialAccounts: user.socialAccounts.map((account) => ({
         id: account.id,
