@@ -42,7 +42,7 @@ export default function SetupPage(){
  function set(key:string,value:any){setForm(current=>({...current,[key]:value}));}
  function handleScreenshot(file:File,key:"profileScreenshotData"|"insightsScreenshotData"){if(!file.type.startsWith("image/")){setError("Envie uma imagem válida.");return;}if(file.size>6*1024*1024){setError("O print precisa ter no máximo 6 MB.");return;}const reader=new FileReader();reader.onload=()=>set(key,String(reader.result||""));reader.readAsDataURL(file);}
 
- function ScreenshotField({label,value,onChange,hint}:{label:string;value:string;onChange:(v:string)=>void;hint:string}){return <div className="feature"><strong>{label}</strong><p className="small muted" style={{marginTop:6}}>{hint}</p><label className="btn secondary" style={{display:"inline-block",marginTop:10,cursor:"pointer"}}>Escolher print<input type="file" accept="image/*" hidden onChange={e=>{const file=e.target.files?.[0];if(file)handleScreenshot(file,value?"profileScreenshotData":"insightsScreenshotData")}}/></label>{value&&<div style={{marginTop:12}}><img src={value} alt={label} style={{width:"100%",maxHeight:260,objectFit:"contain",borderRadius:12,border:"1px solid #27272a"}}/><button type="button" className="btn secondary" style={{marginTop:8}} onClick={()=>onChange("")}>Trocar print</button></div>}</div>}
+ function ScreenshotField({label,value,onChange,hint,dataKey}:{label:string;value:string;onChange:(v:string)=>void;hint:string;dataKey:"profileScreenshotData"|"insightsScreenshotData"}){return <div className="feature"><strong>{label}</strong><p className="small muted" style={{marginTop:6}}>{hint}</p><label className="btn secondary" style={{display:"inline-block",marginTop:10,cursor:"pointer"}}>Escolher print<input type="file" accept="image/*" hidden onChange={e=>{const file=e.target.files?.[0];if(file)handleScreenshot(file,dataKey)}}/></label>{value&&<div style={{marginTop:12}}><img src={value} alt={label} style={{width:"100%",maxHeight:260,objectFit:"contain",borderRadius:12,border:"1px solid #27272a"}}/><button type="button" className="btn secondary" style={{marginTop:8}} onClick={()=>onChange("")}>Trocar print</button></div>}</div>}
 
  function toggle(key:"secondaryObjectives"|"contentPreferences",value:string){
    setForm(current=>({...current,[key]:current[key].includes(value)?current[key].filter((x:string)=>x!==value):[...current[key],value]}));
@@ -56,7 +56,7 @@ export default function SetupPage(){
  }
  function next(){const m=validate();if(m){setError(m);return;}setError("");setStep(s=>Math.min(5,s+1));}
  async function finish(){
-   setError(""); const m=validate(); if(m){setError(m);setStep(2);return;} setSaving(true);
+   setError(""); const m=validate(); if(m){setError(m);setStep(3);return;} setSaving(true);
    try{
      const response=await fetch("/api/profile",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});
      const data=await response.json();
@@ -74,7 +74,7 @@ export default function SetupPage(){
  return <main className="auth"><div className="authbox" style={{width:"min(820px,100%)"}}>
    <div style={{display:"flex",justifyContent:"space-between",gap:20,alignItems:"center"}}>
     <div><div className="logo">MidiaNet<span>AI</span></div><h1 style={{marginBottom:8}}>Vamos direto ao ponto.</h1>
-    <p className="muted">São só 5 etapas rápidas. Responda o essencial e, se quiser, explique livremente o que você quer melhorar.</p></div><strong>{step+1}/{steps.length}</strong>
+    <p className="muted">São só 6 etapas rápidas. Responda o essencial e, se quiser, explique livremente o que você quer melhorar.</p></div><strong>{step+1}/{steps.length}</strong>
    </div>
    <div style={{height:8,background:"#27272a",borderRadius:99,margin:"24px 0"}}><div style={{height:"100%",width:((step+1)/steps.length*100)+"%",background:"linear-gradient(90deg,#a855f7,#ec4899)",borderRadius:99}}/></div>
    <div className="badge">{steps[step]}</div>
@@ -125,8 +125,8 @@ export default function SetupPage(){
     <h2>Agora vamos enxergar o que os dados públicos não mostram.</h2>
     <p className="muted" style={{marginTop:8,lineHeight:1.6}}>Envie apenas 2 prints: a tela inicial do seu perfil e a tela geral dos Insights. A IA vai cruzar a aparência do perfil com seus números para montar um diagnóstico mais profundo.</p>
     <div className="grid2" style={{marginTop:18}}>
-      <ScreenshotField label="📱 Print do perfil" value={form.profileScreenshotData} onChange={(v:string)=>set("profileScreenshotData",v)} hint="Tela inicial do Instagram, mostrando bio, destaques e feed." />
-      <ScreenshotField label="📊 Print dos Insights" value={form.insightsScreenshotData} onChange={(v:string)=>set("insightsScreenshotData",v)} hint="Tela geral dos Insights/Estatísticas do perfil profissional." />
+      <ScreenshotField label="📱 Print do perfil" dataKey="profileScreenshotData" value={form.profileScreenshotData} onChange={(v:string)=>set("profileScreenshotData",v)} hint="Tela inicial do Instagram, mostrando bio, destaques e feed." />
+      <ScreenshotField label="📊 Print dos Insights" dataKey="insightsScreenshotData" value={form.insightsScreenshotData} onChange={(v:string)=>set("insightsScreenshotData",v)} hint="Tela geral dos Insights/Estatísticas do perfil profissional." />
     </div>
     <div className="feature" style={{marginTop:14}}><strong>🔐 Privacidade</strong><p className="small muted" style={{marginTop:6}}>Os prints são usados pelo MidiaNet para análise visual e estratégica. Não precisamos de senha do Instagram.</p></div>
    </>}
