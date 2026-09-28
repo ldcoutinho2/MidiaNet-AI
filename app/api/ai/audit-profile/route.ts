@@ -61,11 +61,12 @@ const schema = {
       required:["score","diagnosis","recommendation"]
     },
     priorities: { type: "array", minItems:3, maxItems:5, items:{type:"string"} },
+    insightsAnalysis: { type: "object", additionalProperties: false, properties: { summary:{type:"string"}, opportunities:{type:"array",items:{type:"string"}}, risks:{type:"array",items:{type:"string"}}, metricsToWatch:{type:"array",items:{type:"string"}} }, required:["summary","opportunities","risks","metricsToWatch"] },
     limitations: { type: "array", items:{type:"string"} }
   },
   required: [
     "overallScore","summary","firstImpression","bio","profilePhoto",
-    "nameAndPositioning","highlights","grid","conversion","postingFrequency","priorities","limitations"
+    "nameAndPositioning","highlights","grid","conversion","postingFrequency","insightsAnalysis","priorities","limitations"
   ]
 } as const;
 
@@ -120,6 +121,12 @@ export async function POST() {
     if (sourceAccount.profilePictureUrl) {
       inputContent.push({ type: "input_image", image_url: sourceAccount.profilePictureUrl });
     }
+    if (typeof profile.profileScreenshotData === "string" && profile.profileScreenshotData.startsWith("data:image/")) {
+      inputContent.push({ type: "input_image", image_url: profile.profileScreenshotData });
+    }
+    if (typeof profile.insightsScreenshotData === "string" && profile.insightsScreenshotData.startsWith("data:image/")) {
+      inputContent.push({ type: "input_image", image_url: profile.insightsScreenshotData });
+    }
     for (const item of media) {
       const itemObject =
         item && typeof item === "object" && !Array.isArray(item)
@@ -139,6 +146,8 @@ export async function POST() {
         "Use primeiro os dados reais do bloco instagram. Não invente informações.",
         "Analise bio, nome/posicionamento, foto de perfil, destaques, grade/feed, frequência de postagem, primeira impressão e conversão.",
         "Quando uma imagem foi anexada, analise somente o que está realmente visível nela.",
+        "Quando houver print do perfil, use-o para avaliar a experiência visual real do visitante: bio, destaques, feed visível, hierarquia, identidade e clareza da oferta.",
+        "Quando houver print de Insights, interprete somente os números visíveis e o período visível. Use esses dados para apontar oportunidades, riscos e métricas a acompanhar. Não invente números.",
         "Os conteúdos anexados são apenas uma amostra dos últimos conteúdos, não representam necessariamente toda a grade.",
         "Se não houver imagem suficiente para avaliar destaques ou a grade inteira, declare a limitação em vez de fingir que viu.",
         "Não inclua URLs, links, endereços de sites, referências de busca ou citações nos campos de texto.",
