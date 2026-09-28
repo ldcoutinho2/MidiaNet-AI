@@ -31,11 +31,11 @@ function Field({label,value,onChange,placeholder,textarea=false,optional=false}:
 
 export default function SetupPage(){
  const router=useRouter(); const [step,setStep]=useState(0); const [form,setForm]=useState<SetupForm>(initial);
- const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false); const [error,setError]=useState("");
+ const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false); const [error,setError]=useState(""); const [editing,setEditing]=useState(false);
 
  useEffect(()=>{fetch("/api/auth/me").then(async r=>{if(!r.ok){router.replace("/login");return null}return r.json()}).then(data=>{
    const p=data?.user?.strategicProfile as Partial<SetupForm>&{onboardingCompletedAt?:string|null}|null|undefined;
-   if(!p)return; if(p.onboardingCompletedAt){router.replace("/dashboard");return;}
+   if(!p)return; if(p.onboardingCompletedAt)setEditing(true);
    setForm(current=>({...current,...Object.fromEntries(Object.keys(initial).map(k=>[k,(p as any)[k]??(current as any)[k]]))}));
  }).finally(()=>setLoading(false))},[router]);
 
@@ -85,7 +85,7 @@ export default function SetupPage(){
      const response=await fetch("/api/profile",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});
      const data=await response.json();
      if(!response.ok){setError(data.error||"Não foi possível salvar.");return;}
-     setError("Analisando seu perfil e preparando seu primeiro post...");
+     setError(editing?"Atualizando seu diagnóstico e estratégia...":"Analisando seu perfil e preparando seu primeiro plano...");
      const analysis=await fetch("/api/ai/analyze-profile",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({profileScreenshotData:form.profileScreenshotData,insightsScreenshotData:form.insightsScreenshotData})});
      if(!analysis.ok) console.warn("first_analysis_failed",await analysis.text());
      router.replace("/dashboard");
@@ -179,7 +179,7 @@ export default function SetupPage(){
    {error&&<p className="small" style={{color:"#fda4af",marginTop:16}}>{error}</p>}
    <div style={{display:"flex",justifyContent:"space-between",gap:12,marginTop:24}}>
     <button className="btn secondary" onClick={()=>setStep(s=>Math.max(0,s-1))} disabled={step===0}>Voltar</button>
-    {step<5?<button className="btn primary" onClick={next}>Continuar →</button>:<button className="btn primary" onClick={finish} disabled={saving}>{saving?"Salvando...":"🚀 Criar minha estratégia"}</button>}
+    {step<5?<button className="btn primary" onClick={next}>Continuar →</button>:<button className="btn primary" onClick={finish} disabled={saving}>{saving?(editing?"Atualizando...":"Salvando..."):(editing?"🔄 Atualizar minha estratégia":"🚀 Criar minha estratégia")}</button>}
    </div>
  </div></main>;
 }
