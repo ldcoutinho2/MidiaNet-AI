@@ -48,10 +48,11 @@ const schema = {
         highlights: { type: "object", additionalProperties: false, properties: { diagnosis:{type:"string"}, recommendation:{type:"string"} }, required:["diagnosis","recommendation"] },
         grid: { type: "object", additionalProperties: false, properties: { diagnosis:{type:"string"}, recommendation:{type:"string"} }, required:["diagnosis","recommendation"] },
         conversion: { type: "object", additionalProperties: false, properties: { diagnosis:{type:"string"}, recommendation:{type:"string"}, ctaSuggestion:{type:"string"} }, required:["diagnosis","recommendation","ctaSuggestion"] },
+        insightsAnalysis: { type: "object", additionalProperties: false, properties: { summary:{type:"string"}, opportunities:{type:"array",items:{type:"string"}}, risks:{type:"array",items:{type:"string"}}, metricsToWatch:{type:"array",items:{type:"string"}} }, required:["summary","opportunities","risks","metricsToWatch"] },
         priorities: { type: "array", minItems:3, maxItems:5, items:{type:"string"} },
         limitations: { type: "array", items:{type:"string"} }
       },
-      required: ["overallScore","summary","firstImpression","bio","profilePhoto","nameAndPositioning","highlights","grid","conversion","priorities","limitations"]
+      required: ["overallScore","summary","firstImpression","bio","profilePhoto","nameAndPositioning","highlights","grid","conversion","insightsAnalysis","priorities","limitations"]
     },
     thirtyDayPlan: {
       type: "array",
