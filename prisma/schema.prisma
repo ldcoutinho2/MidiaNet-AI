@@ -87,6 +87,8 @@ model StrategicProfile {
   ninetyDayGoal            String?
   successDefinition        String?
   constraints              String?
+  profileScreenshotData    String?
+  insightsScreenshotData   String?
   onboardingCompletedAt    DateTime?
   aiProfile                Json?
   aiAnalyzedAt             DateTime?
