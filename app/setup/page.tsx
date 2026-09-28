@@ -40,7 +40,31 @@ export default function SetupPage(){
  }).finally(()=>setLoading(false))},[router]);
 
  function set(key:string,value:any){setForm(current=>({...current,[key]:value}));}
- function handleScreenshot(file:File,key:"profileScreenshotData"|"insightsScreenshotData"){if(!file.type.startsWith("image/")){setError("Envie uma imagem válida.");return;}if(file.size>6*1024*1024){setError("O print precisa ter no máximo 6 MB.");return;}const reader=new FileReader();reader.onload=()=>set(key,String(reader.result||""));reader.readAsDataURL(file);}
+ async function handleScreenshot(file:File,key:"profileScreenshotData"|"insightsScreenshotData"){
+   if(!file.type.startsWith("image/")){setError("Envie uma imagem válida.");return;}
+   if(file.size>8*1024*1024){setError("O print precisa ter no máximo 8 MB.");return;}
+   setError("");
+   const reader=new FileReader();
+   reader.onload=()=>{
+     const src=String(reader.result||"");
+     const img=new Image();
+     img.onload=()=>{
+       const maxWidth=2000;
+       const scale=Math.min(1,maxWidth/img.width);
+       const canvas=document.createElement("canvas");
+       canvas.width=Math.max(1,Math.round(img.width*scale));
+       canvas.height=Math.max(1,Math.round(img.height*scale));
+       const ctx=canvas.getContext("2d");
+       if(!ctx){set(key,src);return;}
+       ctx.drawImage(img,0,0,canvas.width,canvas.height);
+       const compressed=canvas.toDataURL("image/jpeg",0.92);
+       set(key,compressed);
+     };
+     img.onerror=()=>set(key,src);
+     img.src=src;
+   };
+   reader.readAsDataURL(file);
+ }
 
  function ScreenshotField({label,value,onChange,hint,dataKey}:{label:string;value:string;onChange:(v:string)=>void;hint:string;dataKey:"profileScreenshotData"|"insightsScreenshotData"}){return <div className="feature"><strong>{label}</strong><p className="small muted" style={{marginTop:6}}>{hint}</p><label className="btn secondary" style={{display:"inline-block",marginTop:10,cursor:"pointer"}}>Escolher print<input type="file" accept="image/*" hidden onChange={e=>{const file=e.target.files?.[0];if(file)handleScreenshot(file,dataKey)}}/></label>{value&&<div className="card" style={{marginTop:12}}><strong>✓ Print salvo</strong><p className="small muted" style={{marginTop:5}}>O MidiaNet já tem este print para sua próxima análise.</p><button type="button" className="btn secondary" style={{marginTop:8}} onClick={()=>onChange("")}>Trocar print</button></div>}</div>}
 
