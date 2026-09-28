@@ -12,6 +12,12 @@ function cleanJson(value: unknown) {
   return value.map(item => String(item).trim()).filter(Boolean);
 }
 
+function cleanScreenshot(value: unknown) {
+  if (value === "__stored__") return undefined;
+  const text = String(value ?? "").trim();
+  return text || null;
+}
+
 export async function PUT(request: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
@@ -64,8 +70,8 @@ export async function PUT(request: Request) {
         ninetyDayGoal: clean(body.ninetyDayGoal),
         successDefinition: clean(body.successDefinition),
         constraints: clean(body.constraints),
-        profileScreenshotData: clean(body.profileScreenshotData),
-        insightsScreenshotData: clean(body.insightsScreenshotData),
+        profileScreenshotData: cleanScreenshot(body.profileScreenshotData),
+        insightsScreenshotData: cleanScreenshot(body.insightsScreenshotData),
         onboardingCompletedAt: new Date(),
       },
       create: {
