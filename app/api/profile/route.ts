@@ -64,6 +64,8 @@ export async function PUT(request: Request) {
         ninetyDayGoal: clean(body.ninetyDayGoal),
         successDefinition: clean(body.successDefinition),
         constraints: clean(body.constraints),
+        profileScreenshotData: clean(body.profileScreenshotData),
+        insightsScreenshotData: clean(body.insightsScreenshotData),
         onboardingCompletedAt: new Date(),
       },
       create: {
@@ -102,6 +104,8 @@ export async function PUT(request: Request) {
         ninetyDayGoal: clean(body.ninetyDayGoal),
         successDefinition: clean(body.successDefinition),
         constraints: clean(body.constraints),
+        profileScreenshotData: clean(body.profileScreenshotData),
+        insightsScreenshotData: clean(body.insightsScreenshotData),
         onboardingCompletedAt: new Date(),
       },
     });
