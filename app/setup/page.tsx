@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const steps = ["Seu negócio", "Público e objetivo", "Conteúdo e vendas", "Conte o que você quer", "Revisão"];
+const steps = ["Seu negócio", "Público e objetivo", "Conteúdo e vendas", "Diagnóstico visual", "Conte o que você quer", "Revisão"];
 
 type SetupForm = {
   instagramProfileUrl:string; profileDescription:string; businessType:string; niche:string; offer:string; desiredOutcome:string;
@@ -11,7 +11,7 @@ type SetupForm = {
   objective:string; secondaryObjectives:string[]; conversionGoal:string; monetization:string; desiredPositioning:string; brandPersonality:string;
   contentPreferences:string[]; contentStyle:string; appearsOnCamera:boolean; availableMinutesPerDay:number; availableDaysPerWeek:number;
   postingFrequency:string; contentAvoid:string; referenceProfiles:string; competitors:string; differentiators:string; currentChallenges:string;
-  salesFunnel:string; ninetyDayGoal:string; successDefinition:string; constraints:string; location:string; freeContext:string;
+  salesFunnel:string; ninetyDayGoal:string; successDefinition:string; constraints:string; location:string; freeContext:string; profileScreenshotData:string; insightsScreenshotData:string;
 };
 
 const initial:SetupForm={
@@ -20,7 +20,7 @@ const initial:SetupForm={
   objective:"",secondaryObjectives:[],conversionGoal:"",monetization:"",desiredPositioning:"",brandPersonality:"",
   contentPreferences:[],contentStyle:"",appearsOnCamera:true,availableMinutesPerDay:60,availableDaysPerWeek:5,
   postingFrequency:"",contentAvoid:"",referenceProfiles:"",competitors:"",differentiators:"",currentChallenges:"",
-  salesFunnel:"",ninetyDayGoal:"",successDefinition:"",constraints:"",location:"",freeContext:""
+  salesFunnel:"",ninetyDayGoal:"",successDefinition:"",constraints:"",location:"",freeContext:"",profileScreenshotData:"",insightsScreenshotData:""
 };
 
 function Field({label,value,onChange,placeholder,textarea=false,optional=false}:any){
@@ -40,6 +40,10 @@ export default function SetupPage(){
  }).finally(()=>setLoading(false))},[router]);
 
  function set(key:string,value:any){setForm(current=>({...current,[key]:value}));}
+ function handleScreenshot(file:File,key:"profileScreenshotData"|"insightsScreenshotData"){if(!file.type.startsWith("image/")){setError("Envie uma imagem válida.");return;}if(file.size>6*1024*1024){setError("O print precisa ter no máximo 6 MB.");return;}const reader=new FileReader();reader.onload=()=>set(key,String(reader.result||""));reader.readAsDataURL(file);}
+
+ function ScreenshotField({label,value,onChange,hint}:{label:string;value:string;onChange:(v:string)=>void;hint:string}){return <div className="feature"><strong>{label}</strong><p className="small muted" style={{marginTop:6}}>{hint}</p><label className="btn secondary" style={{display:"inline-block",marginTop:10,cursor:"pointer"}}>Escolher print<input type="file" accept="image/*" hidden onChange={e=>{const file=e.target.files?.[0];if(file)handleScreenshot(file,value?"profileScreenshotData":"insightsScreenshotData")}}/></label>{value&&<div style={{marginTop:12}}><img src={value} alt={label} style={{width:"100%",maxHeight:260,objectFit:"contain",borderRadius:12,border:"1px solid #27272a"}}/><button type="button" className="btn secondary" style={{marginTop:8}} onClick={()=>onChange("")}>Trocar print</button></div>}</div>}
+
  function toggle(key:"secondaryObjectives"|"contentPreferences",value:string){
    setForm(current=>({...current,[key]:current[key].includes(value)?current[key].filter((x:string)=>x!==value):[...current[key],value]}));
  }
@@ -47,9 +51,10 @@ export default function SetupPage(){
    if(step===0 && (!form.instagramProfileUrl||!form.businessType||!form.niche||!form.offer)) return "Preencha seu Instagram, tipo de negócio, nicho e o que você oferece.";
    if(step===1 && (!form.audience||!form.objective)) return "Informe quem você quer atrair e escolha seu objetivo principal.";
    if(step===2 && (!form.contentPreferences.length||!form.postingFrequency)) return "Escolha pelo menos um tipo de conteúdo e uma frequência que você consegue manter.";
+   if(step===3 && (!form.profileScreenshotData||!form.insightsScreenshotData)) return "Envie os 2 prints para liberar o diagnóstico visual.";
    return "";
  }
- function next(){const m=validate();if(m){setError(m);return;}setError("");setStep(s=>Math.min(4,s+1));}
+ function next(){const m=validate();if(m){setError(m);return;}setError("");setStep(s=>Math.min(5,s+1));}
  async function finish(){
    setError(""); const m=validate(); if(m){setError(m);setStep(2);return;} setSaving(true);
    try{
@@ -57,7 +62,7 @@ export default function SetupPage(){
      const data=await response.json();
      if(!response.ok){setError(data.error||"Não foi possível salvar.");return;}
      setError("Analisando seu perfil e preparando seu primeiro post...");
-     const analysis=await fetch("/api/ai/analyze-profile",{method:"POST"});
+     const analysis=await fetch("/api/ai/analyze-profile",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({profileScreenshotData:form.profileScreenshotData,insightsScreenshotData:form.insightsScreenshotData})});
      if(!analysis.ok) console.warn("first_analysis_failed",await analysis.text());
      router.replace("/dashboard");
    }catch{setError("Não foi possível conectar ao servidor.");}finally{setSaving(false);}
@@ -117,6 +122,16 @@ export default function SetupPage(){
    </>}
 
    {step===3&&<>
+    <h2>Agora vamos enxergar o que os dados públicos não mostram.</h2>
+    <p className="muted" style={{marginTop:8,lineHeight:1.6}}>Envie apenas 2 prints: a tela inicial do seu perfil e a tela geral dos Insights. A IA vai cruzar a aparência do perfil com seus números para montar um diagnóstico mais profundo.</p>
+    <div className="grid2" style={{marginTop:18}}>
+      <ScreenshotField label="📱 Print do perfil" value={form.profileScreenshotData} onChange={(v:string)=>set("profileScreenshotData",v)} hint="Tela inicial do Instagram, mostrando bio, destaques e feed." />
+      <ScreenshotField label="📊 Print dos Insights" value={form.insightsScreenshotData} onChange={(v:string)=>set("insightsScreenshotData",v)} hint="Tela geral dos Insights/Estatísticas do perfil profissional." />
+    </div>
+    <div className="feature" style={{marginTop:14}}><strong>🔐 Privacidade</strong><p className="small muted" style={{marginTop:6}}>Os prints são usados pelo MidiaNet para análise visual e estratégica. Não precisamos de senha do Instagram.</p></div>
+   </>}
+
+   {step===4&&<>
     <h2>Tem algo que você quer que a IA saiba?</h2>
     <p className="muted" style={{marginTop:8,lineHeight:1.6}}>Essa é a parte mais importante para contar o que as perguntas não captaram. Fale livremente sobre seu perfil, o que está te incomodando, o que já tentou, o que você quer mudar e onde quer chegar.</p>
     <Field label="Fale livremente sobre seu perfil" value={form.freeContext} onChange={(v:string)=>set("freeContext",v)} placeholder="Ex.: sinto que meu perfil está parado, não gosto da aparência da grade, não sei o que postar, quero parecer mais profissional e começar a gerar clientes pelo Instagram..." textarea/>
@@ -140,7 +155,7 @@ export default function SetupPage(){
    {error&&<p className="small" style={{color:"#fda4af",marginTop:16}}>{error}</p>}
    <div style={{display:"flex",justifyContent:"space-between",gap:12,marginTop:24}}>
     <button className="btn secondary" onClick={()=>setStep(s=>Math.max(0,s-1))} disabled={step===0}>Voltar</button>
-    {step<4?<button className="btn primary" onClick={next}>Continuar →</button>:<button className="btn primary" onClick={finish} disabled={saving}>{saving?"Salvando...":"🚀 Criar minha estratégia"}</button>}
+    {step<5?<button className="btn primary" onClick={next}>Continuar →</button>:<button className="btn primary" onClick={finish} disabled={saving}>{saving?"Salvando...":"🚀 Criar minha estratégia"}</button>}
    </div>
  </div></main>;
 }
