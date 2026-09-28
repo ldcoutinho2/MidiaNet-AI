@@ -223,6 +223,10 @@ export async function POST() {
         "Use bio, nome, site, seguidores, publicações e últimos conteúdos para tornar a auditoria específica. Se não houver imagens reais disponíveis para inspeção visual, não finja que viu a grade, capas dos destaques ou qualidade visual das fotos.",
         "Se houver apenas metadados dos últimos conteúdos, use-os para avaliar temas, formatos, frequência e sinais de engajamento, mas declare a limitação para aspectos visuais.",
         "Quando imagens forem anexadas ao input, faça uma análise visual objetiva delas: composição, legibilidade, hierarquia, consistência, uso de texto, enquadramento e qualidade percebida. Não identifique pessoas reais nem invente elementos que não estejam visíveis.",
+        "Quando houver um print do perfil, trate-o como a visão real do visitante: analise bio, nome, foto, destaques, organização visual, feed visível, clareza da oferta, público percebido e CTA. Cruze isso com os dados públicos; não duplique informação sem acrescentar interpretação.",
+        "Quando houver um print de Insights, leia somente os números e categorias realmente visíveis. Use alcance, visitas ao perfil, cliques, crescimento, horários e audiência quando aparecerem. Cruze esses sinais com o objetivo do cliente e explique o que eles sugerem, sem afirmar causalidade.",
+        "O print de Insights é dado fornecido pelo próprio cliente. Trate-o como evidência do período mostrado no print, não como métrica atual permanente. Se a data/período estiver visível, mencione o período; se não estiver, diga que o período não foi confirmado.",
+        "Nunca invente números que não estejam no print ou nos dados públicos. Se um número estiver ilegível ou ausente, registre a limitação.",
         "Use as imagens somente para avaliar os conteúdos realmente enviados. Não trate os últimos 6 conteúdos como se fossem necessariamente toda a grade do perfil.",
         "A frequência informada pelo cliente é uma preferência de referência; não trate automaticamente uma meta de 5 conteúdos por semana como limite se a capacidade e o objetivo indicarem uma frequência maior. Só trate como limite quando o cliente disser explicitamente que não consegue produzir mais.",
         "A programação diária do MidiaNet é SEMPRE 4 conteúdos: 1 Story obrigatório primeiro + 3 publicações principais no feed. O Story é fundamental e NÃO conta como uma das 3 publicações principais.",
@@ -305,11 +309,21 @@ export async function POST() {
                   modelo: profile.monetization,
                   funilAtual: profile.salesFunnel
                 },
-                desafiosAtuais: profile.currentChallenges
+                desafiosAtuais: profile.currentChallenges,
+                diagnosticoVisual: {
+                  printDoPerfilEnviado: Boolean(profile.profileScreenshotData),
+                  printDosInsightsEnviado: Boolean(profile.insightsScreenshotData)
+                }
               })
             },
             ...(instagramData?.fotoPerfilUrl
               ? [{ type: "input_image" as const, image_url: instagramData.fotoPerfilUrl }]
+              : []),
+            ...(typeof profile.profileScreenshotData === "string" && profile.profileScreenshotData.startsWith("data:image/")
+              ? [{ type: "input_image" as const, image_url: profile.profileScreenshotData }]
+              : []),
+            ...(typeof profile.insightsScreenshotData === "string" && profile.insightsScreenshotData.startsWith("data:image/")
+              ? [{ type: "input_image" as const, image_url: profile.insightsScreenshotData }]
               : []),
             ...(Array.isArray(instagramData?.ultimosConteudos)
               ? instagramData.ultimosConteudos
